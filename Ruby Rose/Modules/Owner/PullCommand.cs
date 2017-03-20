@@ -1,4 +1,5 @@
 ﻿using Discord.Commands;
+using RubyRose.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,10 +10,10 @@ using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Owner
 {
-    [Name("Owner")]
+    [Name("System")]
     public class PullCommand : ModuleBase
     {
-        private async Task<string> GitPull(string branch)
+        public static async Task<string> GitPull(string branch)
         {
             var proc = new Process()
             {
@@ -29,6 +30,13 @@ namespace RubyRose.Modules.Owner
             {
                 var error = await proc.StandardError.ReadToEndAsync();
                 var report = await proc.StandardOutput.ReadToEndAsync();
+
+                if (error != null)
+                {
+                    if (Regex.IsMatch(error, "Couldn't find remote ref"))
+                        return error.Substring(7);
+                    Logging.LogMessage("Error", "Dotnet", error);
+                }
 
                 if (Regex.IsMatch(report, "Already up-to-date"))
                 {
