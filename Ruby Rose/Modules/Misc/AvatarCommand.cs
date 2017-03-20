@@ -27,11 +27,11 @@ namespace RubyRose.Modules.Misc
             embed.WithAuthor((author) =>
             {
                 author.Name = $"{user}";
-                author.IconUrl = user.GetAvatarUrl(AvatarFormat.Gif);
-                author.Url = user.GetAvatarUrl(AvatarFormat.Gif, 1024);
+                author.IconUrl = user.GetAvatarUrl(ImageFormat.Auto);
+                author.Url = user.GetAvatarUrl(ImageFormat.Auto, 1024);
             });
 
-            embed.ImageUrl = user.GetAvatarUrl(AvatarFormat.Gif, 1024);
+            embed.ImageUrl = user.GetAvatarUrl(ImageFormat.Auto, 1024);
             embed.WithFooter(footer =>
             {
                 footer.Text = "I KNOW... NO ETA. DONT ASK";
