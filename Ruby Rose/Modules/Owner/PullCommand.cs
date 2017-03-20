@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Owner
 {
+    [Name("Owner")]
     public class PullCommand : ModuleBase
     {
         private async Task<string> GitPull(string branch)
@@ -18,7 +19,7 @@ namespace RubyRose.Modules.Owner
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "git",
-                    Arguments = $"pull -link- {branch}",
+                    Arguments = $"pull https://github.com/Nanabell/Ruby-Rose.git {branch}",
                     WorkingDirectory = Path.Combine(Directory.GetCurrentDirectory(), "../"),
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
