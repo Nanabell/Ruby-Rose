@@ -45,7 +45,7 @@ namespace RubyRose.Modules.Owner
         [RequireOwner]
         public async Task Test([Remainder] string input = null)
         {
-            await ReplyAsync("Test");
+            await ReplyAsync("Updated Test");
         }
 
         [Command("Raw")]
