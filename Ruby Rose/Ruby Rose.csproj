@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <DebugType>portable</DebugType>
+    <AssemblyName>Ruby Rose</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>Ruby Rose</PackageId>
+    <RuntimeIdentifiers>centos.7-x64;win10-x64</RuntimeIdentifiers>
+    <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Discord.Addons.EmojiTools" Version="1.1.0-ci-00017" />
+    <PackageReference Include="Discord.Net.Commands" Version="1.0.0-rc-00642" />
+    <PackageReference Include="Discord.Net.Core" Version="1.0.0-rc-00642" />
+    <PackageReference Include="Discord.Net.Rest" Version="1.0.0-rc-00642" />
+    <PackageReference Include="Discord.Net.Rpc" Version="1.0.0-rc-00642" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.0-rc-00642" />
+    <PackageReference Include="MongoDB.Driver" Version="2.4.2" />
+    <PackageReference Include="morelinq" Version="2.1.0" />
+  </ItemGroup>
+
+</Project>
