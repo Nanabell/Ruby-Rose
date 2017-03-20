@@ -1,32 +1,22 @@
-﻿using System;
+﻿using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using RubyRose.Common;
+using RubyRose.Common.TypeReaders;
+using RubyRose.Config;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using RubyRose.Common;
-using RubyRose.Config;
 
 namespace RubyRose
 {
     public class CommandHandler
     {
-        private CommandService _commandService;
         private DiscordSocketClient _client;
+        private CommandService _commandService;
         private IDependencyMap _map;
-
-        public async Task Install(IDependencyMap map)
-        {
-            _client = map.Get<DiscordSocketClient>();
-            _commandService = map.Get<CommandService>();
-            _map = map;
-
-            await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
-
-            _client.MessageReceived += HandleCommand;
-        }
 
         public async Task HandleCommand(SocketMessage parameterMessage)
         {
@@ -57,15 +47,15 @@ namespace RubyRose
                     {
                         if (result is ExecuteResult)
                         {
-                            ExecuteError(context, (ExecuteResult) result, searchResult);
+                            ExecuteError(context, (ExecuteResult)result, searchResult);
                         }
                         else if (result is PreconditionResult)
                         {
-                            await context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition(((PreconditionResult) result).ErrorReason));
+                            await context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition(((PreconditionResult)result).ErrorReason));
                         }
                         else if (result is ParseResult)
                         {
-                            await context.Channel.SendEmbedAsync(Embeds.Invalid(((ParseResult) result).ErrorReason));
+                            await context.Channel.SendEmbedAsync(Embeds.Invalid(((ParseResult)result).ErrorReason));
                         }
                     }
                 }
@@ -74,6 +64,18 @@ namespace RubyRose
                     Console.WriteLine(e);
                 }
             });
+        }
+
+        public async Task Install(IDependencyMap map)
+        {
+            _commandService = new CommandService(new CommandServiceConfig() { LogLevel = LogSeverity.Info, ThrowOnError = true });
+            _commandService.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
+            _client = map.Get<DiscordSocketClient>();
+            _map = map;
+
+            await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
+
+            _client.MessageReceived += HandleCommand;
         }
 
         private static async void ExecuteError(ICommandContext context, ExecuteResult executeResult, SearchResult searchResult)

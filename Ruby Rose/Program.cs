@@ -1,11 +1,10 @@
-﻿using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Common;
-using RubyRose.Common.TypeReaders;
 using RubyRose.Config;
+using System.Threading.Tasks;
 
 namespace RubyRose
 {
@@ -26,13 +25,9 @@ namespace RubyRose
             //Quartz later here
 
             var handler = new CommandHandler();
-            var service = new CommandService(new CommandServiceConfig() {DefaultRunMode = RunMode.Sync});
-
-            service.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
 
             var map = new DependencyMap();
             map.Add(client);
-            map.Add(service);
             map.Add(mongo);
 
             var events = new EventHandlers(map);
@@ -44,7 +39,6 @@ namespace RubyRose
             await handler.Install(map);
 
             await Task.Delay(-1);
-
         }
     }
 }
