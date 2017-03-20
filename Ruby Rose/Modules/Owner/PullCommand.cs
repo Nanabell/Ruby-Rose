@@ -27,8 +27,6 @@ namespace RubyRose.Modules.Owner
             };
             if (proc.Start())
             {
-                proc.BeginErrorReadLine();
-                proc.BeginOutputReadLine();
                 var error = await proc.StandardError.ReadToEndAsync();
                 var report = await proc.StandardOutput.ReadToEndAsync();
 
