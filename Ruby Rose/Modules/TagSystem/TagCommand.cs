@@ -37,7 +37,7 @@ namespace RubyRose.Modules.TagSystem
         [Command("Tag")]
         [Summary("Use simply keywords to display a custom set response")]
         [MinPermission(AccessLevel.User), RequireAllowed]
-        public async Task Tag(string keyWord)
+        public async Task Tag([Remainder] string keyWord)
         {
             keyWord = keyWord.ToLower();
             var tscollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<Tag>("TagSystem");
