@@ -30,7 +30,7 @@ namespace RubyRose.Modules.TagSystem
             var tscollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<Tag>("TagSystem");
             var tags = tscollec.Find("{}").ToList();
             sb.AppendLine("**Tags**:");
-            sb.AppendLine(string.Join(" ", tags.Select(x => $"`{x.TagName}`")));
+            sb.AppendLine(string.Join(" ", tags.OrderBy(x => x.TagName).Select(x => $"`{x.TagName}`")));
             await ReplyAsync($"{sb}");
         }
 
