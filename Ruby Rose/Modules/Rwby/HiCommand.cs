@@ -11,7 +11,7 @@ namespace RubyRose.Modules.Rwby
     public class HiCommand : ModuleBase
     {
         [Command("Hi")]
-        [RequireAllowed, Ratelimit(5, 30, Measure.Seconds)]
+        [RequireAllowed, Ratelimit(1, 30, Measure.Seconds)]
         [RequireBotPermission(ChannelPermission.SendMessages)]
         public async Task Hi()
         {
