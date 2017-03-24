@@ -2,10 +2,7 @@
 using Discord.Commands;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Moderation
@@ -18,9 +15,9 @@ namespace RubyRose.Modules.Moderation
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Ban(IGuildUser user, int prunedays = 7)
         {
-            var invokerpos = (Context.User as IGuildUser).GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
-            var targetpos = user.GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
-            var botpos = Context.Guild.GetCurrentUserAsync().GetAwaiter().GetResult().GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
+            var invokerpos = getPosition((Context.User as IGuildUser));
+            var targetpos = getPosition(user);
+            var botpos = getPosition(await Context.Guild.GetCurrentUserAsync());
             if (botpos > targetpos)
             {
                 if (invokerpos > targetpos || Context.User.Id == Context.Guild.OwnerId)
@@ -32,5 +29,8 @@ namespace RubyRose.Modules.Moderation
             }
             else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("I cant ban somone who is higher or equal to me in the role hierarchy"));
         }
+
+        private int getPosition(IGuildUser user)
+            => user.GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
     }
 }
