@@ -17,12 +17,19 @@ namespace RubyRose.Modules.Moderation
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Ban(IGuildUser user, int prunedays = 7)
         {
-            if ((Context.User as IGuildUser).GetRoles().OrderByDescending(x => x.Position).First().Position > user.GetRoles().OrderByDescending(x => x.Position).First().Position || Context.User.Id == Context.Guild.OwnerId)
+            var invokerpos = (Context.User as IGuildUser).GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
+            var targetpos = user.GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
+            var botpos = Context.Guild.GetCurrentUserAsync().GetAwaiter().GetResult().GetRoles().OrderByDescending(x => x.Position).FirstOrDefault().Position;
+            if (botpos > targetpos)
             {
-                await Context.Guild.AddBanAsync(user, prunedays);
-                await Context.Channel.SendEmbedAsync(Embeds.Success("*Banned!*", $"{user} has been banned from the Guild!"));
+                if (invokerpos > targetpos || Context.User.Id == Context.Guild.OwnerId)
+                {
+                    await Context.Guild.AddBanAsync(user, prunedays);
+                    await Context.Channel.SendEmbedAsync(Embeds.Success("*Banned!*", $"{user} has been banned from the Guild!"));
+                }
+                else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition($"You cant ban someone who is above or equal to you in the role hierarchy"));
             }
-            else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition($"You cant ban someone who is above or equal to you in the role hierarchy"));
+            else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("I cant ban somone who is higher or equal to me in the role hierarchy"));
         }
     }
 }
