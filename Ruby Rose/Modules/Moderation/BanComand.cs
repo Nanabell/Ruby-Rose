@@ -17,7 +17,7 @@ namespace RubyRose.Modules.Moderation
         [RequireUserPermission(GuildPermission.BanMembers)]
         public async Task Ban(IGuildUser user, int prunedays = 7)
         {
-            if ((Context.User as IGuildUser).GetRoles().OrderByDescending(x => x.Position).First().Position > user.GetRoles().OrderByDescending(x => x.Position).First().Position)
+            if ((Context.User as IGuildUser).GetRoles().OrderByDescending(x => x.Position).First().Position > user.GetRoles().OrderByDescending(x => x.Position).First().Position || Context.User.Id == Context.Guild.OwnerId)
             {
                 await Context.Guild.AddBanAsync(user, prunedays);
                 await Context.Channel.SendEmbedAsync(Embeds.Success("*Banned!*", $"{user} has been banned from the Guild!"));
