@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Moderation
 {
-    internal class BanComand : ModuleBase
+    public class BanComand : ModuleBase
     {
         [Command("Ban")]
         [MinPermission(AccessLevel.ServerModerator), RequireBotPermission(GuildPermission.BanMembers)]
