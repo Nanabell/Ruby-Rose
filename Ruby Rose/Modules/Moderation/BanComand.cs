@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Moderation
 {
+    [Name("Moderation")]
     public class BanComand : ModuleBase
     {
         [Command("Ban")]
