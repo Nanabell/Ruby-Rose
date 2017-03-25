@@ -46,7 +46,6 @@ namespace RubyRose.Modules.RoleSystem
                             roles.Add(Context.Guild.GetRole(x.Role.Id));
                             sb.AppendLine(x.Keyword.ToFirstUpper());
                         }
-
                     });
                     break;
                 }
@@ -62,7 +61,7 @@ namespace RubyRose.Modules.RoleSystem
             {
                 Console.WriteLine(sb.ToString());
                 roles.ForEach(x => { Console.WriteLine(x.Name); });
-                await (Context.User as SocketGuildUser).AddRolesAsync(roles);
+                await (Context.User as SocketGuildUser).AddRolesAsync(roles, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
                 await Context.Channel.SendEmbedAsync(Embeds.Success("You now have the roles for", sb.ToString()));
             }
             else
