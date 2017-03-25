@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Discord.Commands;
+using RubyRose.Common;
+using RubyRose.Common.Preconditions;
+using RubyRose.Database;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord.Commands;
-using RubyRose.Common;
-using RubyRose.Common.Preconditions;
 
 namespace RubyRose.Modules
 {
@@ -14,11 +15,13 @@ namespace RubyRose.Modules
     {
         private readonly CommandService _service;
         private readonly IDependencyMap _map;
+        private readonly Credentials _credentials;
 
         public HelpCommand(CommandService service, IDependencyMap map)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));
             _service = service;
+            _credentials = map.Get<Credentials>();
             _map = map;
         }
 
@@ -43,7 +46,7 @@ namespace RubyRose.Modules
                 sb.AppendLine($"**{group.Key}**: {string.Join(" ", commands.Distinct())}");
             }
             sb.AppendLine(
-                $"\nYou can use `{Config.Settings.Prefix}Help <command>` for mroe information on that command.");
+                $"\nYou can use `{_credentials.Prefix}Help <command>` for mroe information on that command.");
 
             await ReplyAsync($"{sb}");
         }
@@ -69,7 +72,7 @@ namespace RubyRose.Modules
                 {
                     sb.AppendLine("Usage");
                     sb.AppendLine(
-                        $"\t{Config.Settings.Prefix}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
+                        $"\t{_credentials.Prefix}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
                         string.Join(" ", command.Parameters.Select(FormatParam)).Replace("`", ""));
                     sb.AppendLine("Summary");
                     sb.AppendLine($"\t{command.Summary ?? "No Summary"}");

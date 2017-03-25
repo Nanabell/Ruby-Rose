@@ -3,7 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using RubyRose.Common;
 using RubyRose.Common.TypeReaders;
-using RubyRose.Config;
+using RubyRose.Database;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,17 +17,18 @@ namespace RubyRose
         private DiscordSocketClient _client;
         private CommandService _commandService;
         private IDependencyMap _map;
+        private Credentials _credentials;
 
         public async Task HandleCommand(SocketMessage parameterMessage)
         {
             var argPos = 0;
             var message = parameterMessage as SocketUserMessage;
             if (message == null) return;
-            if (message.Content == Settings.Prefix) return;
+            if (message.Content == _credentials.Prefix) return;
 
             var author = message.Author as SocketGuildUser;
             if (author == null) return;
-            if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasStringPrefix(Settings.Prefix, ref argPos))) return;
+            if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasStringPrefix(_credentials.Prefix, ref argPos))) return;
 
             var context = new CommandContext(_client, message);
             var searchResult = _commandService.Search(context, argPos);
@@ -71,6 +72,7 @@ namespace RubyRose
             _commandService = new CommandService(new CommandServiceConfig() { LogLevel = LogSeverity.Info, ThrowOnError = true });
             _commandService.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
             _client = map.Get<DiscordSocketClient>();
+            _credentials = map.Get<Credentials>();
             _map = map;
 
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());

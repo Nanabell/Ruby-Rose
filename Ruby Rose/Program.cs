@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Common;
-using RubyRose.Config;
 using System.Threading.Tasks;
 
 namespace RubyRose
@@ -14,6 +13,8 @@ namespace RubyRose
 
         public async Task Start()
         {
+            var config = Utils.LoadConfig();
+
             var client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,
@@ -21,7 +22,7 @@ namespace RubyRose
                 MessageCacheSize = 10
             });
 
-            var mongo = new MongoClient(Credentials.MongoStrong);
+            var mongo = new MongoClient(config.Database.Mongo);
             //Quartz later here
 
             var handler = new CommandHandler();
@@ -29,11 +30,12 @@ namespace RubyRose
             var map = new DependencyMap();
             map.Add(client);
             map.Add(mongo);
+            map.Add(config);
 
             var events = new EventHandlers(map);
             events.Install();
 
-            await client.LoginAsync(TokenType.Bot, Credentials.DiscordToken);
+            await client.LoginAsync(TokenType.Bot, config.Token);
             await client.StartAsync();
 
             await handler.Install(map);

@@ -1,36 +1,34 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using RubyRose.Custom_Reactions;
+using RubyRose.Database;
+using System;
+using System.Threading.Tasks;
 
 namespace RubyRose.Common
 {
     public class EventHandlers
     {
-        public static DiscordSocketClient Client;
+        private readonly DiscordSocketClient _client;
+        private readonly Credentials _credentials;
 
         public EventHandlers(IDependencyMap map)
         {
-            Client = map.Get<DiscordSocketClient>();
+            _client = map.Get<DiscordSocketClient>();
+            _credentials = map.Get<Credentials>();
         }
 
         public void Install()
         {
-            Client.Log += Logging.Log;
-            Client.Ready += ReadyEvent.Ready;
-            Client.MessageReceived += RwbyFight.MessageHandler;
+            _client.Log += Logging.Log;
+            _client.Ready += Ready;
+            _client.MessageReceived += RwbyFight.MessageHandler;
         }
-    }
 
-    public static class ReadyEvent
-    {
-        public static async Task Ready()
+        private async Task Ready()
         {
-            await EventHandlers.Client.SetGameAsync(Config.Settings.NowPlaying);
+            await _client.SetGameAsync(_credentials.NowPlaying);
         }
     }
 
@@ -41,6 +39,7 @@ namespace RubyRose.Common
             LogMessage(msg.Severity.ToString(), msg.Source, msg.Message);
             return Task.CompletedTask;
         }
+
         private static void Append(string text, ConsoleColor? foreground = null, ConsoleColor? background = null)
         {
             if (foreground == null)

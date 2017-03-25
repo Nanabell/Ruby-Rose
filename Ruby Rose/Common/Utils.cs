@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using RubyRose.Database;
+using System;
+using System.IO;
 
 namespace RubyRose.Common
 {
@@ -60,6 +63,7 @@ namespace RubyRose.Common
                                 years++;
                             }
                             break;
+
                         case Phase.Months:
                             if (current.AddMonths(months + 1) > date2)
                             {
@@ -73,6 +77,7 @@ namespace RubyRose.Common
                                 months++;
                             }
                             break;
+
                         case Phase.Days:
                             if (current.AddDays(days + 1) > date2)
                             {
@@ -86,8 +91,10 @@ namespace RubyRose.Common
                                 days++;
                             }
                             break;
+
                         case Phase.Done:
                             break;
+
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
@@ -95,6 +102,11 @@ namespace RubyRose.Common
 
                 return span;
             }
+        }
+
+        public static Credentials LoadConfig()
+        {
+            return JsonConvert.DeserializeObject<Credentials>(File.ReadAllText("./credentials.json"));
         }
     }
 }
