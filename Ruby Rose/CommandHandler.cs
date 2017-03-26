@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using RubyRose.Common;
 using RubyRose.Common.TypeReaders;
 using RubyRose.Database;
+using Serilog;
 using System;
 using System.IO;
 using System.Linq;
@@ -41,8 +42,7 @@ namespace RubyRose
                 {
                     var result = await _commandService.ExecuteAsync(context, argPos, _map);
 
-                    Logging.LogMessage("Info", "Command",
-                        $"{commandInfo?.Name ?? message.Content.Substring(argPos).Split(' ').First()} => {(result.IsSuccess ? result.ToString() : result.Error.ToString())} | [{(context.IsPrivate ? "Private" : context.Guild.Name)}] {(context.IsPrivate ? "" : $"#{context.Channel.Name} ")}({context.User}) || {message.Content.Substring(message.Content.Split(' ').First().Length)}");
+                    Log.Information($"{commandInfo?.Name ?? message.Content.Substring(argPos).Split(' ').First()} => {(result.IsSuccess ? result.ToString() : result.Error.ToString())} | [{(context.IsPrivate ? "Private" : context.Guild.Name)}] {(context.IsPrivate ? "" : $"#{context.Channel.Name} ")}({context.User}) || {message.Content.Substring(message.Content.Split(' ').First().Length)}");
 
                     if (!result.IsSuccess)
                     {
@@ -105,7 +105,7 @@ namespace RubyRose
             {
                 await context.Channel.SendEmbedAsync(embed);
             }
-            catch { Logging.LogMessage("Critial", "Command", $"Not enough Permission to Display Error Message. Gracefull fail.."); }
+            catch { Log.Error("Not enough Permission to Display Error Message. Gracefull fail.."); }
         }
     }
 }

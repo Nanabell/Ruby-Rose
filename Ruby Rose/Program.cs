@@ -3,6 +3,8 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Common;
+using Serilog;
+using Serilog.Events;
 using System.Threading.Tasks;
 
 namespace RubyRose
@@ -14,11 +16,17 @@ namespace RubyRose
         public async Task Start()
         {
             var config = Utils.LoadConfig();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.RollingFile("Logs/debug-{Date}.log", outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
+                .WriteTo.RollingFile("Logs/RubyRose-{Date}.log", restrictedToMinimumLevel: LogEventLevel.Information, outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
+                .WriteTo.RollingFile("Logs/error-{Date}.log", restrictedToMinimumLevel: LogEventLevel.Error, outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
+                .CreateLogger();
 
             var client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,
-                LogLevel = LogSeverity.Info,
+                LogLevel = LogSeverity.Debug,
                 MessageCacheSize = 10
             });
 
