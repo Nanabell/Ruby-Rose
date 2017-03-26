@@ -11,14 +11,15 @@ using System.Reflection;
 using System.IO;
 using MoreLinq;
 using System.Collections.Concurrent;
+using Serilog;
 
 namespace RubyRose.Custom_Reactions
 {
     public static class RwbyFight
     {
-        static bool temp;
-        static ConcurrentDictionary<ulong, bool> WeissF = new ConcurrentDictionary<ulong, bool>();
-        static ConcurrentDictionary<ulong, bool> RubyF = new ConcurrentDictionary<ulong, bool>();
+        private static bool temp;
+        private static ConcurrentDictionary<ulong, bool> WeissF = new ConcurrentDictionary<ulong, bool>();
+        private static ConcurrentDictionary<ulong, bool> RubyF = new ConcurrentDictionary<ulong, bool>();
 
         public static async Task MessageHandler(SocketMessage arg)
         {
@@ -33,7 +34,7 @@ namespace RubyRose.Custom_Reactions
                         direc = direc.Parent;
                     }
                     while (direc.Name != "Ruby Rose");
-                    Console.WriteLine(direc.FullName);
+                    Log.Information("Triggered Rwby Fight Gif");
                     await arg.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
                     WeissF.TryRemove(arg.Channel.Id, out temp);
                     RubyF.TryRemove(arg.Channel.Id, out temp);
@@ -54,7 +55,7 @@ namespace RubyRose.Custom_Reactions
                         direc = direc.Parent;
                     }
                     while (direc.Name != "Ruby Rose");
-                    Console.WriteLine(direc.FullName);
+                    Log.Information("Triggered Rwby Fight Gif");
                     await arg.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
                     WeissF.TryRemove(arg.Channel.Id, out temp);
                     RubyF.TryRemove(arg.Channel.Id, out temp);
