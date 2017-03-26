@@ -26,7 +26,7 @@ namespace RubyRose.Common
         public static async Task<IEnumerable<CommandInfo>> CheckConditionsAsync(this IEnumerable<CommandInfo> commandInfos,
             CommandContext context, IDependencyMap map = null)
         {
-             var ret = new List<CommandInfo>();
+            var ret = new List<CommandInfo>();
             foreach (var commandInfo in commandInfos)
             {
                 if ((await commandInfo.CheckPreconditionsAsync(context, map)).IsSuccess)
