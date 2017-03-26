@@ -20,6 +20,9 @@ namespace RubyRose.Database
         public List<Commands> Command { get; set; }
 
         [BsonIgnoreIfNull]
+        public List<Joinables> Joinable { get; set; }
+
+        [BsonIgnoreIfNull]
         public Roles OneTruePair { get; set; }
     }
 
@@ -82,6 +85,12 @@ namespace RubyRose.Database
                 public ulong Id { get; set; }
             }
         }
+    }
+
+    public class Joinables
+    {
+        public string Keyword { get; set; }
+        public Roles Role { get; set; }
     }
 
     public class Roles
