@@ -1,5 +1,6 @@
 ﻿using Discord.Commands;
 using RubyRose.Common;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,7 +34,7 @@ namespace RubyRose.Modules.Owner
                 var error = await proc.StandardError.ReadToEndAsync();
                 if (error != null)
                 {
-                    Logging.LogMessage("Error", "Dotnet", error);
+                    Log.Fatal(error);
                 }
 
                 if (Regex.IsMatch(report, @"Restore completed in \d.+? sec"))

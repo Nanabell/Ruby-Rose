@@ -23,11 +23,9 @@ namespace RubyRose.Modules.Moderation
 
             public WhitelistCommands(CommandService service, IDependencyMap map)
             {
-                if (service == null) throw new ArgumentNullException(nameof(service));
-                if (map == null) throw new ArgumentNullException(nameof(map));
-
-                _service = service;
-                _map = map;
+                //TODO: REDO ALL OF THIS
+                _service = service ?? throw new ArgumentNullException(nameof(service));
+                _map = map ?? throw new ArgumentNullException(nameof(map));
                 _mongo = map.Get<MongoClient>();
             }
 
@@ -115,6 +113,7 @@ namespace RubyRose.Modules.Moderation
                 }
                 else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"A Command with the name {commandName} was not found!"));
             }
+
             [Command("All")]
             [Summary("Whitelist all Commands to the current or given Channel")]
             [MinPermission(AccessLevel.ServerModerator)]
@@ -150,6 +149,7 @@ namespace RubyRose.Modules.Moderation
                     await Context.Channel.SendEmbedAsync(Embeds.Success("Global Override created", $"Global Override Whitelist created and added Channel {channel?.Mention} to Override"));
                 }
             }
+
             [Command("None")]
             [Summary("Remove the current or given Channel from the Global-Whitelist")]
             [MinPermission(AccessLevel.ServerModerator)]

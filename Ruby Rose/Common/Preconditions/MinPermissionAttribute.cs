@@ -55,7 +55,7 @@ namespace RubyRose.Common.Preconditions
 
             if (requestedLvl == AccessLevel.Special)
             {
-                var c = mongo.GetDiscordDb<DatabaseModel>("Ruby Rose");
+                var c = mongo.GetDiscordDb(context.Client);
                 var cGuild = c.Find(x => x.Id == context.Guild.Id).First();
 
                 if (cGuild.User.Any(u => u.Id == user.Id))

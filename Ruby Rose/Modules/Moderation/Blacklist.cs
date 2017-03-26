@@ -23,11 +23,9 @@ namespace RubyRose.Modules.Moderation
 
             public BlacklistCommands(CommandService service, IDependencyMap map)
             {
-                if (service == null) throw new ArgumentNullException(nameof(service));
-                if (map == null) throw new ArgumentNullException(nameof(map));
-
-                _service = service;
-                _map = map;
+                //TODO: REDO ALL OF THIS
+                _service = service ?? throw new ArgumentNullException(nameof(service));
+                _map = map ?? throw new ArgumentNullException(nameof(map));
                 _mongo = map.Get<MongoClient>();
             }
 
@@ -114,6 +112,7 @@ namespace RubyRose.Modules.Moderation
                 }
                 else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"A Command with the name {commandName} was not found!"));
             }
+
             [Command("All")]
             [Summary("blacklist all Commands to the current or given Channel")]
             [MinPermission(AccessLevel.ServerModerator)]
@@ -149,6 +148,7 @@ namespace RubyRose.Modules.Moderation
                     await Context.Channel.SendEmbedAsync(Embeds.Success("Channel Blacklisted", $"All Commands have been blacklisted from {channel?.Mention}"));
                 }
             }
+
             [Command("None")]
             [Summary("Remove the current or given Channel from the Global-Blacklist")]
             [MinPermission(AccessLevel.ServerModerator)]

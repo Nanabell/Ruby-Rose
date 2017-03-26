@@ -1,5 +1,6 @@
 ﻿using Discord.Commands;
 using RubyRose.Common;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,7 +35,7 @@ namespace RubyRose.Modules.Owner
 
                 if (error != "")
                 {
-                    Logging.LogMessage("Error", "Dotnet", error);
+                    Log.Fatal(error);
                 }
 
                 if (Regex.IsMatch(report, @"Build \w+\."))

@@ -1,8 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MongoDB.Driver;
 using RubyRose.Custom_Reactions;
 using RubyRose.Database;
+using Serilog;
 using System;
 using System.Threading.Tasks;
 
@@ -11,65 +13,59 @@ namespace RubyRose.Common
     public class EventHandlers
     {
         private readonly DiscordSocketClient _client;
+        private readonly MongoClient _mongo;
         private readonly Credentials _credentials;
 
         public EventHandlers(IDependencyMap map)
         {
             _client = map.Get<DiscordSocketClient>();
             _credentials = map.Get<Credentials>();
+            _mongo = map.Get<MongoClient>();
         }
 
         public void Install()
         {
-            _client.Log += Logging.Log;
+            _client.Log += LogEvents;
             _client.Ready += Ready;
             _client.MessageReceived += RwbyFight.MessageHandler;
+            _client.GuildAvailable += GuildAvailable;
         }
 
         private async Task Ready()
         {
+            Log.Verbose($"Set Game to: {_credentials.NowPlaying}");
             await _client.SetGameAsync(_credentials.NowPlaying);
         }
-    }
 
-    public static class Logging
-    {
-        public static Task Log(LogMessage msg)
+        private async Task GuildAvailable(SocketGuild guild)
         {
-            LogMessage(msg.Severity.ToString(), msg.Source, msg.Message);
+            Log.Information($"Connected to {guild.Name}");
+
+            var c = _mongo.GetDiscordDb(_client);
+            var cGuild = await c.Find(g => g.Id == guild.Id).FirstOrDefaultAsync();
+            if (cGuild == null)
+            {
+                await c.InsertOneAsync(new DatabaseModel { Id = guild.Id, Command = null, Joinable = null, OneTruePair = null, Tag = null, User = null });
+                Log.Information($"Added {guild.Name} to the Database");
+            }
+        }
+
+        private Task LogEvents(LogMessage msg)
+        {
+            switch (msg.Severity)
+            {
+                case LogSeverity.Debug:
+                    { Log.Debug(msg.Message); break; }
+                case LogSeverity.Verbose:
+                    { Log.Verbose(msg.Message); break; }
+                case LogSeverity.Info:
+                    { Log.Information(msg.Message); break; }
+                case LogSeverity.Warning:
+                    { Log.Warning(msg.Message); break; }
+                case LogSeverity.Error:
+                    { Log.Error(msg.Message); break; }
+            }
             return Task.CompletedTask;
-        }
-
-        private static void Append(string text, ConsoleColor? foreground = null, ConsoleColor? background = null)
-        {
-            if (foreground == null)
-                foreground = ConsoleColor.White;
-            if (background == null)
-                background = ConsoleColor.Black;
-
-            Console.ForegroundColor = (ConsoleColor)foreground;
-            Console.BackgroundColor = (ConsoleColor)background;
-            Console.Write(text);
-        }
-
-        private static void EndLine(string text = "", ConsoleColor? foreground = null, ConsoleColor? background = null)
-        {
-            if (foreground == null)
-                foreground = ConsoleColor.White;
-            if (background == null)
-                background = ConsoleColor.Black;
-
-            Console.ForegroundColor = (ConsoleColor)foreground;
-            Console.BackgroundColor = (ConsoleColor)background;
-            Console.Write(text + Environment.NewLine);
-        }
-
-        public static void LogMessage(string level, string source, string message)
-        {
-            Append($"{DateTime.Now:hh:mm:ss} ", ConsoleColor.DarkGray);
-            Append($"[{level}] ", ConsoleColor.Red);
-            Append($"{source}: ", source == "Command" ? ConsoleColor.Cyan : ConsoleColor.DarkGreen);
-            EndLine(message, ConsoleColor.White);
         }
     }
 }

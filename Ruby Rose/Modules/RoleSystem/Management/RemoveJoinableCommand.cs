@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
-using Discord.Commands;
+﻿using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.Modules.RoleSystem.Db;
+using RubyRose.Database;
+using Serilog;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.RoleSystem.Management
 {
@@ -23,17 +25,24 @@ namespace RubyRose.Modules.RoleSystem.Management
         public async Task RemoveJoinable(string keyword)
         {
             keyword = keyword.ToLower();
-            var jrcollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<JoinSystemSerializer>("JoinSystem");
-            if (jrcollec.Find(f => f.Keyword == keyword).Any())
+
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+
+            if (cGuild.Joinable != null)
             {
-                await jrcollec.FindOneAndDeleteAsync(f => f.Keyword == keyword);
-                await Context.Channel.SendEmbedAsync(
-                    Embeds.Success("Role no longer Joinable", "Joinable Role deleted from Database"));
-            }
-            else
-            {
-                await Context.Channel.SendEmbedAsync(
-                    Embeds.NotFound($"Unable to find a Joinable Role with the keyword {keyword}."));
+                if (cGuild.Joinable.Any(j => j.Keyword == keyword))
+                {
+                    cGuild.Joinable.Remove(cGuild.Joinable.First(j => j.Keyword == keyword));
+                    await c.UpdateOneAsync(f => f.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Joinable", cGuild.Joinable));
+                    Log.Information($"Dropped joinable {keyword} from Db");
+                    await Context.Channel.SendEmbedAsync(Embeds.Success("Success", $"Dropped Joinable {keyword} from db"));
+                }
+                else
+                {
+                    Log.Error("Unable to Remove Joinable. Not Existent");
+                    await Context.Channel.SendEmbedAsync(Embeds.NotFound($"Unable to find a Joinable Role with the keyword {keyword}."));
+                }
             }
         }
     }

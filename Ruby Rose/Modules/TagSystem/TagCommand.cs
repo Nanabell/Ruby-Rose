@@ -7,6 +7,8 @@ using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using Tag = RubyRose.MongoDB.Tag;
+using Serilog;
+using RubyRose.Database;
 
 namespace RubyRose.Modules.TagSystem
 {
@@ -27,11 +29,19 @@ namespace RubyRose.Modules.TagSystem
         public async Task Tag()
         {
             var sb = new StringBuilder();
-            var tscollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<Tag>("TagSystem");
-            var tags = tscollec.Find("{}").ToList();
-            sb.AppendLine("**Tags**:");
-            sb.AppendLine(string.Join(" ", tags.OrderBy(x => x.TagName).Select(x => $"`{x.TagName}`")));
-            await ReplyAsync($"{sb}");
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            if (cGuild.Tag != null)
+            {
+                sb.AppendLine("**Tags**:");
+                sb.AppendLine(string.Join(" ", cGuild.Tag.OrderBy(x => x.Name).Select(x => $"`{x.Name}`")));
+                await ReplyAsync($"{sb}");
+            }
+            else
+            {
+                Log.Error($"Faild to load Tags on {Context.Guild.Name}. None Existent");
+                await ReplyAsync("Failed to load Tags.\nReason: None existing");
+            }
         }
 
         [Command("Tag")]
@@ -40,19 +50,31 @@ namespace RubyRose.Modules.TagSystem
         public async Task Tag([Remainder] string keyWord)
         {
             keyWord = keyWord.ToLower();
-            var tscollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<Tag>("TagSystem");
-            var tag = tscollec.Find(f => f.TagName == keyWord).FirstOrDefault();
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
 
-            if (tag != null)
+            if (cGuild.Tag != null)
             {
-                var update = Builders<Tag>.Update
-                    .Set("Uses", tag.Uses + 1);
-                await tscollec.UpdateOneAsync(f => f.Id == tag.Id, update);
-                await ReplyAsync(tag.Response);
+                var tag = cGuild.Tag.FirstOrDefault(t => t.Name == keyWord);
+
+                if (tag != null)
+                {
+                    cGuild.Tag[cGuild.Tag.IndexOf(tag)].Uses++;
+                    cGuild.Tag[cGuild.Tag.IndexOf(tag)].LastUsed = DateTime.UtcNow;
+                    await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
+                    await ReplyAsync(tag.Response);
+                }
+                else
+                {
+                    Log.Error($"Unable to find Tag with Name {keyWord} on {Context.Guild.Name}");
+                    await ReplyAsync("Failed to load Tags.\nReason: None existing");
+                }
             }
             else
-                await Context.Channel.SendEmbedAsync(
-                    Embeds.NotFound($"A Tag with the name {keyWord.ToFirstUpper()} was not found!"));
+            {
+                Log.Error($"Faild to load Tags on {Context.Guild.Name}. None Existent");
+                await ReplyAsync("Failed to load Tags.\nReason: None existing");
+            }
         }
     }
 }

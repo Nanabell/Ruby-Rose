@@ -1,12 +1,13 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.Modules.Fun.Db;
+using RubyRose.Database;
+using Serilog;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Fun
 {
@@ -28,12 +29,16 @@ namespace RubyRose.Modules.Fun
             var application = await Context.Client.GetApplicationInfoAsync();
             var rnd = new Random();
             var selectionRole = Context.Guild.EveryoneRole;
-            var otpcollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<OtpSerializer>("OTP");
-            var otpRole = otpcollec.Find("{}").FirstOrDefault();
-            if (otpRole != null)
+
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstOrDefaultAsync();
+
+            if (cGuild.OneTruePair != null)
             {
-                selectionRole = Context.Guild.GetRole(otpRole.RoleId);
+                selectionRole = Context.Guild.GetRole(cGuild.OneTruePair.Id);
+                Log.Verbose($"OneTruePair Role found and accepted: {selectionRole.Name}");
             }
+            else Log.Verbose("No OneTruePair Role set defaulting to Everyone Role");
 
             var allUsers = await Context.Guild.GetUsersAsync();
             var users = allUsers.Where(x => x.GetRoles().Any(r => r == selectionRole)).ToList();
@@ -78,8 +83,6 @@ namespace RubyRose.Modules.Fun
                 };
                 await Context.Channel.SendEmbedAsync(embed);
             }
-
-
         }
     }
 }

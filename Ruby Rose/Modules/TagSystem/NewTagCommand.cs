@@ -5,11 +5,15 @@ using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using Tag = RubyRose.MongoDB.Tag;
+using RubyRose.Database;
+using System.Linq;
+using Serilog;
+using Discord;
 
 namespace RubyRose.Modules.TagSystem
 {
     [Name("Tag System"), Group]
-    public class NewTagCommand :ModuleBase
+    public class NewTagCommand : ModuleBase
     {
         private readonly MongoClient _mongo;
 
@@ -25,24 +29,81 @@ namespace RubyRose.Modules.TagSystem
         {
             keyWord = keyWord.ToLower();
 
-            var tscollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<Tag>("TagSystem");
-            var results = tscollec.Find(f => f.TagName == keyWord).FirstOrDefault();
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
 
-            if (results == null)
+            var newTag = new Tags
             {
-                var newTag = new Tag
-                {
-                    TagName = keyWord,
-                    Response = response,
-                    Creator = Context.User.Id,
-                    CreatedAt = DateTime.UtcNow,
-                    Uses = 0
-                };
+                Name = keyWord,
+                Response = response,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = Context.User.Id,
+                LastUsed = DateTime.MinValue,
+                Uses = 0
+            };
 
-                await tscollec.InsertOneAsync(newTag);
-                await ReplyAsync($"Tag `{keyWord.ToFirstUpper()}` successfully added!");
+            if (cGuild.Tag != null)
+            {
+                if (!cGuild.Tag.Any(t => t.Name == keyWord))
+                {
+                    cGuild.Tag.Add(newTag);
+                    await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
+                }
+                else
+                {
+                    Log.Error($"Failed to add Tag {keyWord} on {Context.Guild.Name}. Already existent");
+                    await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Can't create Tag {keyWord} since it is already existent"));
+                    return;
+                }
             }
-            else await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Can't create Tag {keyWord} since it is already existent"));
+            else
+            {
+                await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.AddToSet("Tag", newTag));
+            }
+            Log.Information($"Added new Tag {newTag.Name} on {Context.Guild.Name}");
+            await ReplyAsync($"Tag `{keyWord.ToFirstUpper()}` successfully added!");
+        }
+
+        [Command("NewTag")]
+        [Summary("Creates a new Tag")]
+        [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
+        public async Task NewTag(string keyWord, IAttachment attachment)
+        {
+            keyWord = keyWord.ToLower();
+
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+
+            var newTag = new Tags
+            {
+                Name = keyWord,
+                Response = attachment.Url,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = Context.User.Id,
+                LastUsed = DateTime.MinValue,
+                Uses = 0
+            };
+
+            if (cGuild.Tag != null)
+            {
+                if (!cGuild.Tag.Any(t => t.Name == keyWord))
+                {
+                    cGuild.Tag.Add(newTag);
+                    await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
+                }
+                else
+                {
+                    Log.Error($"Failed to add Tag {keyWord} on {Context.Guild.Name}. Already existent");
+                    await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Can't create Tag {keyWord} since it is already existent"));
+                    return;
+                }
+            }
+            else
+            {
+                await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.AddToSet("Tag", newTag));
+            }
+            Log.Information($"Added new Tag {newTag.Name} on {Context.Guild.Name}");
+            await ReplyAsync($"Tag `{keyWord.ToFirstUpper()}` successfully added!");
         }
     }
 }

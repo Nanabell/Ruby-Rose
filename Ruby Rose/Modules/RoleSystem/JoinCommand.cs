@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.Modules.RoleSystem.Db;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.RoleSystem
 {
@@ -32,41 +30,47 @@ namespace RubyRose.Modules.RoleSystem
             var sb = new StringBuilder();
 
             keyword = keyword.ToLower();
-            var jrcollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<JoinSystemSerializer>("JoinSystem");
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
 
-            foreach (var word in keyword.Split(' '))
+            if (cGuild.Joinable != null)
             {
-                if (word == "all")
+                foreach (var word in keyword.Split(' '))
                 {
-                    var all = jrcollec.Find("{}");
-                    await all.ForEachAsync(x =>
+                    if (word == "all")
                     {
-                        if (!(Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(x.Role.Id)))
+                        cGuild.Joinable.ForEach(x =>
                         {
-                            roles.Add(Context.Guild.GetRole(x.Role.Id));
-                            sb.AppendLine(x.Keyword.ToFirstUpper());
-                        }
-                    });
-                    break;
+                            if (!(Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(x.Role.Id)))
+                            {
+                                roles.Add(Context.Guild.GetRole(x.Role.Id));
+                                sb.AppendLine(x.Keyword.ToFirstUpper());
+                            }
+                            else sb.AppendLine($"{x.Keyword.ToFirstUpper()} --already joined");
+                        });
+                        break;
+                    }
+                    var result = cGuild.Joinable.FirstOrDefault(f => f.Keyword == word);
+                    if (result == null) continue;
+
+                    if ((Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(result.Role.Id)))
+                    {
+                        sb.AppendLine($"{result.Keyword.ToFirstUpper()} --already joined");
+                        continue;
+                    }
+                    roles.Add(Context.Guild.GetRole(result.Role.Id));
+                    sb.AppendLine(result.Keyword.ToFirstUpper());
                 }
-                var result = jrcollec.Find(f => f.Keyword == word).FirstOrDefault();
-                if (result == null) continue;
 
-                if ((Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(result.Role.Id))) continue;
-                roles.Add(Context.Guild.GetRole(result.Role.Id));
-                sb.AppendLine(result.Keyword.ToFirstUpper());
-            }
-
-            if (roles.Count > 0)
-            {
-                Console.WriteLine(sb.ToString());
-                roles.ForEach(x => { Console.WriteLine(x.Name); });
-                await (Context.User as SocketGuildUser).AddRolesAsync(roles, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
-                await Context.Channel.SendEmbedAsync(Embeds.Success("You now have the roles for", sb.ToString()));
-            }
-            else
-            {
-                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found."));
+                if (roles.Count > 0)
+                {
+                    await (Context.User as SocketGuildUser).AddRolesAsync(roles, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
+                    await Context.Channel.SendEmbedAsync(Embeds.Success("You now have the roles for", sb.ToString()));
+                }
+                else
+                {
+                    await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
+                }
             }
         }
     }

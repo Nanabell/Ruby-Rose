@@ -1,11 +1,13 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.Modules.RoleSystem.Db;
+using RubyRose.Database;
+using Serilog;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.RoleSystem.Management
 {
@@ -26,28 +28,37 @@ namespace RubyRose.Modules.RoleSystem.Management
         public async Task AddJoinable(string keyword, IRole role)
         {
             keyword = keyword.ToLower();
-            var jrcollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<JoinSystemSerializer>("JoinSystem");
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstOrDefaultAsync();
 
-            var joinable = new JoinSystemSerializer
+            var newjoin = new Joinables
             {
                 Keyword = keyword,
-                Role = new Role
+                Role = new Roles
                 {
-                    Id = role.Id,
-                    Name = role.Name
+                    Id = role.Id
                 }
             };
-
-            if (!jrcollec.Find(f => f.Role.Id == role.Id).Any())
+            if (cGuild.Joinable == null)
             {
-                await jrcollec.InsertOneAsync(joinable);
-                await Context.Channel.SendEmbedAsync(Embeds.Success($"{role.Name} now joinable",
-                    $"The Role {role.Name} is now joinable with the Keyword: {keyword.ToFirstUpper()}"));
+                await c.UpdateOneAsync(f => f.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.AddToSet("Joinable", newjoin), new UpdateOptions { IsUpsert = true });
+                Log.Information($"Added Role {role.Name} to Joinable Database with Keyword: {keyword}");
+                await Context.Channel.SendEmbedAsync(Embeds.Success($"{role.Name} now joinable", $"The Role {role.Name} is now joinable with the Keyword: {keyword.ToFirstUpper()}"));
             }
             else
             {
-                await Context.Channel.SendEmbedAsync(
-                    Embeds.Invalid($"The Role {role.Name} is already marked as Joinable."));
+                if (!cGuild.Joinable.Any(f => f.Keyword == keyword))
+                {
+                    cGuild.Joinable.Add(newjoin);
+                    await c.UpdateOneAsync(f => f.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Joinable", cGuild.Joinable), new UpdateOptions { IsUpsert = true });
+                    Log.Information($"Added Role {role.Name} to Joinable Database with Keyword: {keyword}");
+                    await Context.Channel.SendEmbedAsync(Embeds.Success($"{role.Name} now joinable", $"The Role {role.Name} is now joinable with the Keyword: {keyword.ToFirstUpper()}"));
+                }
+                else
+                {
+                    Log.Error($"Tried to add {keyword} to db but is already existing");
+                    await Context.Channel.SendEmbedAsync(Embeds.Exeption($"Keyword {keyword} already assigned to a Role"));
+                }
             }
         }
     }

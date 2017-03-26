@@ -1,11 +1,12 @@
-﻿using System;
-using System.Text;
-using System.Threading.Tasks;
-using Discord.Commands;
+﻿using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.Modules.RoleSystem.Db;
+using RubyRose.Database;
+using Serilog;
+using System;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.RoleSystem
 {
@@ -26,11 +27,19 @@ namespace RubyRose.Modules.RoleSystem
         public async Task List()
         {
             var sb = new StringBuilder();
-            var jrcollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<JoinSystemSerializer>("JoinSystem");
-            var all = await jrcollec.FindAsync("{}");
-            sb.AppendLine("all");
-            await all.ForEachAsync(x => sb.AppendLine(x.Keyword));
-            await Context.Channel.SendEmbedAsync(Embeds.Success("list of keyword to join a role", sb.ToString()));
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstOrDefaultAsync();
+
+            if (cGuild.Joinable != null)
+            {
+                sb.AppendLine("all");
+                cGuild.Joinable.ForEach(x => sb.AppendLine(x.Keyword.ToFirstUpper()));
+                await Context.Channel.SendEmbedAsync(Embeds.Success("list of keyword to join a role", sb.ToString()));
+            }
+            else
+            {
+                Log.Error("Joinables has no Roles yet");
+            }
         }
     }
 }

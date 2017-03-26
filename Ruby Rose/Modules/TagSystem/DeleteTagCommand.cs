@@ -1,10 +1,12 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord.Commands;
+﻿using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using Tag = RubyRose.MongoDB.Tag;
+using RubyRose.Database;
+using Serilog;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.TagSystem
 {
@@ -25,12 +27,22 @@ namespace RubyRose.Modules.TagSystem
         public async Task DeleteTag(string keyWord)
         {
             keyWord = keyWord.ToLower();
-            var tscollec = _mongo.GetDatabase($"{Context.Guild.Id}").GetCollection<Tag>("TagSystem");
-            var oldTag = await tscollec.FindOneAndDeleteAsync(f => f.TagName == keyWord);
+            var c = _mongo.GetDiscordDb(Context.Client);
+            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
 
-            if (oldTag != null)
-                await ReplyAsync($"Tag `{oldTag.TagName.ToFirstUpper()}` successfully Deleted!");
-            else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"Could not find a Tag with the name {keyWord}"));
+            if (cGuild.Tag != null)
+            {
+                var tag = cGuild.Tag.First(t => t.Name == keyWord);
+                cGuild.Tag.Remove(tag);
+                await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
+                Log.Information($"Dropped Tag {tag.Name} on {Context.Guild.Name} from Db");
+                await ReplyAsync($"Tag `{tag.Name.ToFirstUpper()}` successfully Deleted!");
+            }
+            else
+            {
+                Log.Error($"Unable to delete Tag {keyWord} on {Context.Guild.Name}. Not Existent in Db");
+                await Context.Channel.SendEmbedAsync(Embeds.NotFound($"Could not find a Tag with the name {keyWord}"));
+            }
         }
     }
 }
