@@ -11,6 +11,5 @@
     public class Database
     {
         public string Mongo { get; set; }
-        public string Efcore { get; set; }
     }
 }
