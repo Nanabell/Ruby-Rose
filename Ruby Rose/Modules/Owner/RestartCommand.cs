@@ -17,36 +17,7 @@ namespace RubyRose.Modules.Owner
         public async Task Restart()
         {
             await ReplyAsync("*Restarting...*");
-            var proc = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = @"dotnet",
-                    Arguments = "run",
-                    WorkingDirectory = Directory.GetCurrentDirectory(),
-                    RedirectStandardError = true
-                }
-            };
-
-            proc.Start();
-            Environment.Exit(0);
-        }
-
-        public static void restart()
-        {
-            var proc = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = @"dotnet",
-                    Arguments = "run",
-                    WorkingDirectory = Directory.GetCurrentDirectory(),
-                    RedirectStandardError = true
-                }
-            };
-
-            proc.Start();
-            Environment.Exit(0);
+            Environment.Exit(1);
         }
     }
 }

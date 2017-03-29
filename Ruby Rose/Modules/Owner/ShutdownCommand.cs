@@ -13,7 +13,7 @@ namespace RubyRose.Modules.Owner
         [RequireOwner]
         public async Task Shutdown()
         {
-            await ReplyAsync("***SHUTDWON***");
+            await ReplyAsync("***SHUTDOWN***");
             Environment.Exit(0);
         }
     }

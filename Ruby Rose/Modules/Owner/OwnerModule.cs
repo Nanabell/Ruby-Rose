@@ -6,12 +6,21 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MongoDB.Driver;
+using RubyRose.Database;
 
 namespace RubyRose.Modules.Owner
 {
     [Name("Owner"), Group]
     public class OwnerModule : ModuleBase
     {
+        private readonly MongoClient _mongo;
+
+        public OwnerModule(IDependencyMap map)
+        {
+            _mongo = map.Get<MongoClient>();
+        }
+
         [Command("BotInfo")]
         [RequireOwner]
         public async Task Info()
@@ -45,7 +54,7 @@ namespace RubyRose.Modules.Owner
         [RequireOwner]
         public async Task Test([Remainder] string input = null)
         {
-            await ReplyAsync("Updated Updated Test");
+            await ReplyAsync("No");
         }
 
         [Command("Raw")]
@@ -57,6 +66,7 @@ namespace RubyRose.Modules.Owner
 
         private static string GetUptime()
             => (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss");
+
         private static string GetHeapSize() => Math.Round(GC.GetTotalMemory(true) / (1024.0 * 1024.0), 2).ToString(CultureInfo.InvariantCulture);
     }
 }

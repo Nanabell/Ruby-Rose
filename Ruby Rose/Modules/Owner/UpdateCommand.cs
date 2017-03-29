@@ -30,7 +30,7 @@ namespace RubyRose.Modules.Owner
 
                 await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Success("***Updating...***", "***RESTARTING***")));
                 await Task.Delay(200);
-                RestartCommand.restart();
+                Environment.Exit(1);
             }
             else await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Invalid("Already up-to-date")));
         }

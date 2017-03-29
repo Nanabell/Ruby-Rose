@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ruby Rose", "Ruby Rose\Ruby Rose.csproj", "{3A52C461-C9F4-4589-9297-0299CA362E90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Restart Manager", "Restart Manager\Restart Manager.csproj", "{67BB989C-21C1-43BF-AB44-7CAE5DD99334}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{3A52C461-C9F4-4589-9297-0299CA362E90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A52C461-C9F4-4589-9297-0299CA362E90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A52C461-C9F4-4589-9297-0299CA362E90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67BB989C-21C1-43BF-AB44-7CAE5DD99334}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67BB989C-21C1-43BF-AB44-7CAE5DD99334}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67BB989C-21C1-43BF-AB44-7CAE5DD99334}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67BB989C-21C1-43BF-AB44-7CAE5DD99334}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
