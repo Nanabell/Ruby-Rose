@@ -67,7 +67,7 @@ namespace RubyRose.Modules.TagSystem
                 else
                 {
                     Log.Error($"Unable to find Tag with Name {keyWord} on {Context.Guild.Name}");
-                    await ReplyAsync("Failed to load Tags.\nReason: None existing");
+                    await ReplyAsync($"Tag with the Name {keyWord} not found.");
                 }
             }
             else
