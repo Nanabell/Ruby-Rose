@@ -91,6 +91,7 @@ namespace RubyRose.Database
     {
         public string Keyword { get; set; }
         public Roles Role { get; set; }
+        public int Level { get; set; }
     }
 
     public class Roles

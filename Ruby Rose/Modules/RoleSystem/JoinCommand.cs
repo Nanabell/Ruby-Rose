@@ -4,6 +4,8 @@ using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,19 +41,47 @@ namespace RubyRose.Modules.RoleSystem
                 {
                     if (word == "all")
                     {
-                        cGuild.Joinable.ForEach(x =>
+                        foreach (var join in cGuild.Joinable)
                         {
-                            if (!(Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(x.Role.Id)))
+                            if (join.Level > 0)
                             {
-                                roles.Add(Context.Guild.GetRole(x.Role.Id));
-                                sb.AppendLine(x.Keyword.ToFirstUpper());
+                                sb.AppendLine($"{join.Keyword.ToFirstUpper()} --cant join with all");
+                                continue;
                             }
-                            else sb.AppendLine($"{x.Keyword.ToFirstUpper()} --already joined");
-                        });
+                            if (!(Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(join.Role.Id)))
+                            {
+                                roles.Add(Context.Guild.GetRole(join.Role.Id));
+                                sb.AppendLine(join.Keyword.ToFirstUpper());
+                            }
+                            else sb.AppendLine($"{join.Keyword.ToFirstUpper()} --already joined");
+                        };
                         break;
                     }
                     var result = cGuild.Joinable.FirstOrDefault(f => f.Keyword == word);
                     if (result == null) continue;
+                    try
+                    {
+                        if (result.Level > 0)
+                        {
+                            var skip = false;
+                            var rolelist = cGuild.Joinable.Where(x => x.Level == result.Level).ToList();
+                            var userRoles = (Context.User as SocketGuildUser).Roles;
+                            foreach (var role in rolelist)
+                            {
+                                if (userRoles.Any(x => x.Id == role.Role.Id))
+                                {
+                                    sb.AppendLine($"{result.Keyword.ToFirstUpper()} --cant join, user has already a role of level {result.Level}");
+                                    skip = true;
+                                }
+                            }
+                            if (skip)
+                                continue;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error($"Role Level Compare Faild:\n{e}");
+                    }
 
                     if ((Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(result.Role.Id)))
                     {

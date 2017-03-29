@@ -25,7 +25,7 @@ namespace RubyRose.Modules.RoleSystem.Management
         [Command("AddJoinable")]
         [Summary("Mark a Role as Joinable with a Keyword")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task AddJoinable(string keyword, IRole role)
+        public async Task AddJoinable(string keyword, IRole role, int RoleLevel = 0)
         {
             keyword = keyword.ToLower();
             var c = _mongo.GetDiscordDb(Context.Client);
@@ -34,6 +34,7 @@ namespace RubyRose.Modules.RoleSystem.Management
             var newjoin = new Joinables
             {
                 Keyword = keyword,
+                Level = RoleLevel,
                 Role = new Roles
                 {
                     Id = role.Id

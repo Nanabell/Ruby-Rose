@@ -45,7 +45,7 @@ namespace RubyRose.Common
             var cGuild = await c.Find(g => g.Id == guild.Id).FirstOrDefaultAsync();
             if (cGuild == null)
             {
-                await c.InsertOneAsync(new DatabaseModel { Id = guild.Id, Command = null, Joinable = null, OneTruePair = null, Tag = null, User = null });
+                await c.InsertOneAsync(new DatabaseModel { Id = guild.Id, HighestRoleLevel = 0, Command = null, Joinable = null, OneTruePair = null, Tag = null, User = null });
                 Log.Information($"Added {guild.Name} to the Database");
             }
         }
