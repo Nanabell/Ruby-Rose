@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
+using System.Linq;
 using Serilog;
 using System;
 using System.Text;
@@ -32,8 +33,13 @@ namespace RubyRose.Modules.RoleSystem
 
             if (cGuild.Joinable != null)
             {
-                sb.AppendLine("all");
-                cGuild.Joinable.ForEach(x => sb.AppendLine(x.Keyword.ToFirstUpper()));
+                sb.AppendLine("```");
+                sb.AppendLine("Lv: 0 - All");
+                foreach (var join in cGuild.Joinable.OrderBy(x => x.Level))
+                {
+                    sb.AppendLine($"Lv: {join.Level} - {join.Keyword.ToFirstUpper()}");
+                }
+                sb.AppendLine("```");
                 await Context.Channel.SendEmbedAsync(Embeds.Success("list of keyword to join a role", sb.ToString()));
             }
             else
