@@ -18,9 +18,9 @@ namespace RubyRose
             var config = Utils.LoadConfig();
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .WriteTo.RollingFile("Logs/debug-{Date}.log", outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
-                .WriteTo.RollingFile("Logs/RubyRose-{Date}.log", restrictedToMinimumLevel: LogEventLevel.Information, outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
-                .WriteTo.RollingFile("Logs/error-{Date}.log", restrictedToMinimumLevel: LogEventLevel.Error, outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}")
+                .WriteTo.RollingFile("Logs/debug-{Date}.log", outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", retainedFileCountLimit: 7)
+                .WriteTo.RollingFile("Logs/RubyRose-{Date}.log", restrictedToMinimumLevel: LogEventLevel.Information, outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", retainedFileCountLimit: 7)
+                .WriteTo.RollingFile("Logs/error-{Date}.log", restrictedToMinimumLevel: LogEventLevel.Error, outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}", retainedFileCountLimit: 7)
                 .CreateLogger();
 
             var client = new DiscordSocketClient(new DiscordSocketConfig
