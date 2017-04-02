@@ -43,7 +43,7 @@ namespace RubyRose
             logger.Trace("[Discord] Added Client, Mongodb & config to DependencyMap");
 
             logger.Trace($"[Gateway] Starting Login to Discord");
-            if (isTestBot)
+            if (config.IsTestBot)
                 await client.LoginAsync(TokenType.Bot, config.Token);
             else
                 await client.LoginAsync(TokenType.Bot, config.TestBotToken);

@@ -4,6 +4,7 @@
     {
         public string Prefix { get; set; }
         public string NowPlaying { get; set; }
+        public bool IsTestBot { get; set; }
         public string Token { get; set; }
         public string TestBotToken { get; set; }
         public Database Database { get; set; }
