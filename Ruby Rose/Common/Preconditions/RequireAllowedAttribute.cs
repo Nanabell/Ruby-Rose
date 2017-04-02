@@ -3,86 +3,75 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using MongoDB.Driver;
-using RubyRose.MongoDB;
+using System.Collections.Generic;
+using RubyRose.Database;
 
 namespace RubyRose.Common.Preconditions
 {
     public class RequireAllowedAttribute : PreconditionAttribute
     {
+        private static MongoClient _mongo;
+
         public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command,
             IDependencyMap map)
         {
+            _mongo = map.Get<MongoClient>();
             var user = context.User as IGuildUser;
             if (user == null) return Task.FromResult(PreconditionResult.FromSuccess());
 
             var application = context.Client.GetApplicationInfoAsync().GetAwaiter().GetResult();
             if (application.Owner.Id == context.User.Id) return Task.FromResult(PreconditionResult.FromSuccess());
 
-            if (!IsWhitelisted(context, command, map))
-                return IsBlacklisted(context, command, map)
+            if (!IsWhitelisted(context, command))
+                return IsBlacklisted(context, command)
                     ? Task.FromResult(
                         PreconditionResult.FromError(
-                            $"Command __`{command.Name}`__ is **blacklisted** to specific channels which include this channel, thus this command cant be used here!"))
+                            $"Command __`{command.Name}`__ is **Blacklisted** to specific channels which include this channel, thus this command cant be used here!"))
                     : Task.FromResult(PreconditionResult.FromSuccess());
-            return IsAllowed(context, command, map)
+            return IsAllowed(context, command)
                 ? Task.FromResult(PreconditionResult.FromSuccess())
                 : Task.FromResult(
                     PreconditionResult.FromError(
-                        $"Command __`{command.Name}`__ is **whitelisted** to specific channels which do not incluse this channel, thus this command cant be used here!"));
+                        $"Command __`{command.Name}`__ is **Whitelisted** to specific channels which do not incluse this channel, thus this command cant be used here!"));
         }
 
-        private static bool IsWhitelisted(ICommandContext context, CommandInfo info, IDependencyMap map)
+        private bool IsWhitelisted(ICommandContext context, CommandInfo info)
         {
-            var mongo = map.Get<MongoClient>();
+            var allWhitelists = _mongo.GetCollection<Whitelists>(context.Client);
+            var whitelistsAll = GetCommandWhitelists(allWhitelists, context.Guild, "all").GetAwaiter().GetResult();
+            var commandWhitelists = GetCommandWhitelists(allWhitelists, context.Guild, info.Name).GetAwaiter().GetResult();
 
-            var wcollec = mongo.GetDatabase($"{context.Guild.Id}").GetCollection<CommandWhitelist>("CommandWhitelist");
-            var commandWhitelist = wcollec.Find("{}").ToList();
-
-            return commandWhitelist.Any(command => command.Name == "all") || commandWhitelist.Any(command => command.Name == info.Name);
+            return commandWhitelists.Any() || whitelistsAll.Any();
         }
 
-        private static bool IsBlacklisted(ICommandContext context, CommandInfo info, IDependencyMap map)
+        private bool IsBlacklisted(ICommandContext context, CommandInfo info)
         {
-            var mongo = map.Get<MongoClient>();
+            var allBlacklists = _mongo.GetCollection<Blacklists>(context.Client);
+            var blacklistsAll = GetCommandBlacklists(allBlacklists, context.Guild, "all").GetAwaiter().GetResult();
+            var commandBlacklists = GetCommandBlacklists(allBlacklists, context.Guild, info.Name).GetAwaiter().GetResult();
 
-            var bcollec = mongo.GetDatabase($"{context.Guild.Id}").GetCollection<CommandBlacklist>("CommandBlacklist");
-            var commandBlacklist = bcollec.Find("{}").ToList();
-
-            if (commandBlacklist.Any(command => command.Name == "all"))
-            {
-                var cmd = commandBlacklist.First(command => command.Name == "all");
-                if (cmd.BlacklistedChannelIds.Contains(context.Channel.Id)) return true;
-            }
-
-            // ReSharper disable once InvertIf
-            if (commandBlacklist.Any(command => command.Name == info.Name))
-            {
-                var cmd = commandBlacklist.First(command => command.Name == info.Name);
-                if (cmd.BlacklistedChannelIds.Contains(context.Channel.Id)) return true;
-            }
-            return false;
+            return blacklistsAll.Exists(b => b.ChannelId == context.Channel.Id) || commandBlacklists.Exists(b => b.ChannelId == context.Channel.Id);
         }
 
-        private static bool IsAllowed(ICommandContext context, CommandInfo info, IDependencyMap map)
+        private bool IsAllowed(ICommandContext context, CommandInfo info)
         {
-            var mongo = map.Get<MongoClient>();
+            var allWhitelists = _mongo.GetCollection<Whitelists>(context.Client);
+            var whitelistsAll = GetCommandWhitelists(allWhitelists, context.Guild, "all").GetAwaiter().GetResult();
+            var commandWhitelists = GetCommandWhitelists(allWhitelists, context.Guild, info.Name).GetAwaiter().GetResult();
 
-            var wcollec = mongo.GetDatabase($"{context.Guild.Id}").GetCollection<CommandWhitelist>("CommandWhitelist");
-            var commandWhitelist = wcollec.Find("{}").ToList();
+            return commandWhitelists.Exists(w => w.ChannelId == context.Channel.Id) || whitelistsAll.Exists(w => w.ChannelId == context.Channel.Id);
+        }
 
-            if (commandWhitelist.Any(command => command.Name == info.Name))
-            {
-                var cmd = commandWhitelist.First(command => command.Name == info.Name);
-                if (cmd.WhitelistedChannelIds.Contains(context.Channel.Id)) return true;
-            }
+        private async Task<List<Whitelists>> GetCommandWhitelists(IMongoCollection<Whitelists> collection, IGuild guild, string name)
+        {
+            var whitelistsCursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
+            return await whitelistsCursor.ToListAsync();
+        }
 
-            // ReSharper disable once InvertIf
-            if (commandWhitelist.Any(command => command.Name == "all"))
-            {
-                var cmd = commandWhitelist.First(command => command.Name == "all");
-                if (cmd.WhitelistedChannelIds.Contains(context.Channel.Id)) return true;
-            }
-            return false;
+        private async Task<List<Blacklists>> GetCommandBlacklists(IMongoCollection<Blacklists> collection, IGuild guild, string name)
+        {
+            var blacklistsCursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
+            return await blacklistsCursor.ToListAsync();
         }
     }
 }

@@ -7,7 +7,8 @@ using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.MongoDB;
+using NLog;
+using RubyRose.Database;
 
 namespace RubyRose.Modules.Moderation
 {
@@ -17,6 +18,7 @@ namespace RubyRose.Modules.Moderation
         [Group("Blacklist"), Name("Blacklist")]
         public class BlacklistCommands : ModuleBase
         {
+            private static Logger logger = LogManager.GetCurrentClassLogger();
             private readonly CommandService _service;
             private readonly IDependencyMap _map;
             private readonly MongoClient _mongo;
@@ -25,92 +27,77 @@ namespace RubyRose.Modules.Moderation
             {
                 //TODO: REDO ALL OF THIS
                 _service = service ?? throw new ArgumentNullException(nameof(service));
-                _map = map ?? throw new ArgumentNullException(nameof(map));
+                _map = map;
                 _mongo = map.Get<MongoClient>();
             }
 
             [Command("Add")]
             [Summary("Use this command to add a command to the blacklist for the current or given channel")]
             [MinPermission(AccessLevel.ServerModerator)]
-            public async Task Add(string commandName, ITextChannel channel = null)
+            public async Task Add(CommandInfo command, ITextChannel channel = null)
             {
-                var result = _service.Search(Context, commandName);
-                if (result.IsSuccess)
+                channel = channel ?? Context.Channel as ITextChannel;
+                var newBlack = new Blacklists
                 {
-                    var command = result.Commands.FirstOrDefault().Command;
-                    if (channel == null) channel = Context.Channel as ITextChannel;
-                    var bcollec = _mongo.GetDatabase(Context.Guild.Id.ToString()).GetCollection<CommandBlacklist>("CommandBlacklist");
-                    var all = await bcollec.FindAsync("{}");
-                    var cmdlist = await all.ToListAsync();
+                    GuildId = Context.Guild.Id,
+                    ChannelId = channel.Id,
+                    Name = command.Name
+                };
 
-                    if (cmdlist.Any(n => n.Name == command.Name))
+                var allBlacklists = _mongo.GetCollection<Blacklists>(Context.Client);
+                var blacklists = await GetCommandBlacklists(allBlacklists, Context.Guild, command.Name);
+
+                if (blacklists != null)
+                {
+                    if (!blacklists.Exists(c => c.ChannelId == channel.Id))
                     {
-                        var cmd = cmdlist.First(n => n.Name == command.Name);
-                        if (channel != null && !cmd.BlacklistedChannelIds.Contains(channel.Id))
-                        {
-                            cmd.BlacklistedChannelIds.Add(channel.Id);
-                            var update = Builders<CommandBlacklist>.Update
-                                .Set("BlacklistedChannelIds", cmd.BlacklistedChannelIds);
-
-                            await bcollec.UpdateOneAsync(f => f.Name == command.Name, update);
-                            await Context.Channel.SendEmbedAsync(Embeds.Success("Channel Added to Blacklist", $"Channel {channel.Mention} has been added to `{command.Name}'s` Blacklist"));
-                        }
-                        else await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Channel {channel?.Name} already blacklisted for Command {command.Name}"));
+                        await allBlacklists.InsertOneAsync(newBlack);
+                        await ReplyAsync($"Command `{command.Name}` is now Blacklisted in `{channel.Name}`");
+                        logger.Info($"Command {command.Name} now blacklisted in {channel.Name} on {Context.Guild.Name}");
                     }
                     else
                     {
-                        if (channel != null)
-                        {
-                            var cw = new CommandBlacklist() { Name = command.Name, BlacklistedChannelIds = new List<ulong> { channel.Id } };
-
-                            await bcollec.InsertOneAsync(cw);
-                        }
-                        await Context.Channel.SendEmbedAsync(Embeds.Success("Blacklist Created", $"The command `{command.Name}` is now blacklisted in the channel {channel?.Mention}"));
+                        await ReplyAsync($"Command {command.Name} already blacklisted in `{channel.Name}`");
+                        logger.Warn($"Failed to Blacklist {command.Name} in {channel.Name} on {Context.Guild.Name}, already Blacklisted");
                     }
                 }
-                else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"A Command with the name {commandName} was not found!"));
+                else
+                {
+                    await allBlacklists.InsertOneAsync(newBlack);
+                    await ReplyAsync($"Command `{command.Name}` is now Blacklisted in `{channel.Name}`");
+                    logger.Info($"Command {command.Name} now blacklisted in {channel.Name} on {Context.Guild.Name}");
+                }
             }
 
             [Command("Remove"), Alias("Rm")]
             [Summary("Use this command to remove a command from the blacklist for the current or a given channel")]
             [MinPermission(AccessLevel.ServerModerator)]
-            public async Task Remove(string commandName, ITextChannel channel = null)
+            public async Task Remove(CommandInfo command, ITextChannel channel = null)
             {
-                var result = _service.Search(Context, commandName);
-                if (result.IsSuccess)
+                channel = channel ?? Context.Channel as ITextChannel;
+                var allBlacklists = _mongo.GetCollection<Blacklists>(Context.Client);
+                var blacklists = await GetCommandBlacklists(allBlacklists, Context.Guild, command.Name);
+
+                if (blacklists != null)
                 {
-                    var command = result.Commands.FirstOrDefault().Command;
-                    if (channel == null) channel = Context.Channel as ITextChannel;
-                    var bcollec = _mongo.GetDatabase(Context.Guild.Id.ToString()).GetCollection<CommandBlacklist>("CommandBlacklist");
-                    var all = await bcollec.FindAsync("{}");
-                    var cmdlist = await all.ToListAsync();
-
-                    if (cmdlist.Any(n => n.Name == command.Name))
+                    if (blacklists.Exists(c => c.ChannelId == channel.Id))
                     {
-                        var cmd = cmdlist.First(n => n.Name == command.Name);
-                        if (channel != null && cmd.BlacklistedChannelIds.Contains(channel.Id))
-                        {
-                            if (cmd.BlacklistedChannelIds.Count > 1)
-                            {
-                                cmd.BlacklistedChannelIds.Remove(channel.Id);
-
-                                var update = Builders<CommandBlacklist>.Update
-                                    .Set("BlacklistedChannelIds", cmd.BlacklistedChannelIds);
-
-                                await bcollec.UpdateOneAsync(f => f.Name == command.Name, update);
-                                await Context.Channel.SendEmbedAsync(Embeds.Success("Channel Removed from Blacklist", $"Channel {channel.Mention} has been removed from `{command.Name}'s` blacklist"));
-                            }
-                            else
-                            {
-                                await bcollec.FindOneAndDeleteAsync(f => f.Name == command.Name);
-                                await Context.Channel.SendEmbedAsync(Embeds.Success("Blacklist Deleted", $"The Blacklist for the Command {command.Name} was deleted since it was empty"));
-                            }
-                        }
-                        else await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Channel {channel?.Mention} is not blacklisted for Command `{command.Name}`"));
+                        var whitelist = blacklists.First(c => c.ChannelId == channel.Id);
+                        await allBlacklists.DeleteAsync(whitelist);
+                        await ReplyAsync($"Command `{command.Name}` is no longer Blacklisted in `{channel.Name}`");
+                        logger.Info($"Command {command.Name} no longer blacklisted in {channel.Name} on {Context.Guild.Name}");
                     }
-                    else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"Command {commandName} is not blacklisted"));
+                    else
+                    {
+                        await ReplyAsync($"Command {command.Name} not blacklisted in `{channel.Name}`");
+                        logger.Warn($"Failed to remove Blacklist {command.Name} from {channel.Name} on {Context.Guild.Name}, not Blacklsited");
+                    }
                 }
-                else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"A Command with the name {commandName} was not found!"));
+                else
+                {
+                    await ReplyAsync($"Command {command.Name} not Blacklisted in `{channel.Name}`");
+                    logger.Warn($"Failed to remove Blacklist {command.Name} from {channel.Name} on {Context.Guild.Name}, not Blacklisted");
+                }
             }
 
             [Command("All")]
@@ -118,34 +105,36 @@ namespace RubyRose.Modules.Moderation
             [MinPermission(AccessLevel.ServerModerator)]
             public async Task All(ITextChannel channel = null)
             {
-                if (channel == null) channel = Context.Channel as ITextChannel;
-                var bcollec = _mongo.GetDatabase(Context.Guild.Id.ToString()).GetCollection<CommandBlacklist>("CommandBlacklist");
-                var all = await bcollec.FindAsync("{}");
-                var cmdlist = await all.ToListAsync();
-
-                if (cmdlist.Any(n => n.Name == "all"))
+                channel = channel ?? Context.Channel as ITextChannel;
+                var newBlack = new Blacklists
                 {
-                    var cmd = cmdlist.First(n => n.Name == "all");
-                    if (channel != null && !cmd.BlacklistedChannelIds.Contains(channel.Id))
-                    {
-                        cmd.BlacklistedChannelIds.Add(channel.Id);
-                        var update = Builders<CommandBlacklist>.Update
-                            .Set("BlacklistedChannelIds", cmd.BlacklistedChannelIds);
+                    GuildId = Context.Guild.Id,
+                    ChannelId = channel.Id,
+                    Name = "all"
+                };
 
-                        await bcollec.UpdateOneAsync(f => f.Name == "all", update);
-                        await Context.Channel.SendEmbedAsync(Embeds.Success("Channel Blacklisted", $"All Commands have been blacklisted from {channel.Mention}"));
+                var allBlacklists = _mongo.GetCollection<Blacklists>(Context.Client);
+                var blacklists = await GetCommandBlacklists(allBlacklists, Context.Guild, "all");
+
+                if (blacklists != null)
+                {
+                    if (!blacklists.Exists(c => c.ChannelId == channel.Id))
+                    {
+                        await allBlacklists.InsertOneAsync(newBlack);
+                        await ReplyAsync($"All Commands are now Blacklisted in `{channel.Name}`");
+                        logger.Info($"All Commands now blacklisted in {channel.Name} on {Context.Guild.Name}");
                     }
-                    else await Context.Channel.SendEmbedAsync(Embeds.Invalid($"All Commands are already blacklisted from {channel?.Mention}"));
+                    else
+                    {
+                        await ReplyAsync($"All Commands are already Blacklisted in `{channel.Name}`");
+                        logger.Warn($"Failed to blacklist All Commands to {channel.Name} on {Context.Guild.Name}, already Blacklisted");
+                    }
                 }
                 else
                 {
-                    if (channel != null)
-                    {
-                        var cw = new CommandBlacklist() { Name = "all", BlacklistedChannelIds = new List<ulong> { channel.Id } };
-
-                        await bcollec.InsertOneAsync(cw);
-                    }
-                    await Context.Channel.SendEmbedAsync(Embeds.Success("Channel Blacklisted", $"All Commands have been blacklisted from {channel?.Mention}"));
+                    await allBlacklists.InsertOneAsync(newBlack);
+                    await ReplyAsync($"All Commands are now Blacklisted to `{channel.Name}`");
+                    logger.Info($"All Commands are now blacklisted to {channel.Name} on {Context.Guild.Name}");
                 }
             }
 
@@ -154,36 +143,42 @@ namespace RubyRose.Modules.Moderation
             [MinPermission(AccessLevel.ServerModerator)]
             public async Task None(ITextChannel channel = null)
             {
-                if (channel == null) channel = Context.Channel as ITextChannel;
+                channel = channel ?? Context.Channel as ITextChannel;
+                var allBlacklists = _mongo.GetCollection<Blacklists>(Context.Client);
+                var blacklists = await GetCommandBlacklists(allBlacklists, Context.Guild, "all");
 
-                var wcollec = _mongo.GetDatabase(Context.Guild.Id.ToString()).GetCollection<CommandBlacklist>("CommandBlacklist");
-                var all = await wcollec.FindAsync("{}");
-                var cmdlist = await all.ToListAsync();
-
-                if (cmdlist.Any(n => n.Name == "all"))
+                if (blacklists != null)
                 {
-                    var cmd = cmdlist.First(n => n.Name == "all");
-                    if (channel != null && cmd.BlacklistedChannelIds.Contains(channel.Id))
+                    if (blacklists.Exists(c => c.ChannelId == channel.Id))
                     {
-                        if (cmd.BlacklistedChannelIds.Count > 1)
-                        {
-                            cmd.BlacklistedChannelIds.Remove(channel.Id);
-
-                            var update = Builders<CommandBlacklist>.Update
-                                .Set("BlacklistedChannelIds", cmd.BlacklistedChannelIds);
-
-                            await wcollec.UpdateOneAsync(f => f.Name == "all", update);
-                            await Context.Channel.SendEmbedAsync(Embeds.Success("Channel Override Removed", $"Global Override for {channel.Mention} Removed\nBeware that Command specific Blacklists will still block those Commands"));
-                        }
-                        else
-                        {
-                            await wcollec.FindOneAndDeleteAsync(f => f.Name == "all");
-                            await Context.Channel.SendEmbedAsync(Embeds.Success("Global Override Removed", $"Global Override Removed since it was Empty\nBeware that Command specific Blacklists will still block those Commands"));
-                        }
+                        var blacklist = blacklists.First(c => c.ChannelId == channel.Id);
+                        await allBlacklists.DeleteAsync(blacklist);
+                        await ReplyAsync($"All Commands are no longer Blacklisted in `{channel.Name}`");
+                        logger.Info($"All Commands are no longer blacklsited in {channel.Name} on {Context.Guild.Name}");
                     }
-                    else await Context.Channel.SendEmbedAsync(Embeds.NotFound($"{channel?.Mention} is not in the Global Override Blacklist and thus can't be removed"));
+                    else
+                    {
+                        await ReplyAsync($"No Command is not Blacklisted in `{channel.Name}`");
+                        logger.Warn($"Failed to remove Blacklist for All Commands from {channel.Name} on {Context.Guild.Name}, not Blacklisted");
+                    }
                 }
-                else await Context.Channel.SendEmbedAsync(Embeds.NotFound("Global Override Blacklist is empty and thus nothing can be removed"));
+                else
+                {
+                    await ReplyAsync($"No Command is not Blacklisted in `{channel.Name}`");
+                    logger.Warn($"Failed to remove blacklist for All Commands from {channel.Name} on {Context.Guild.Name}, not Blacklisted");
+                }
+            }
+
+            private async Task<List<Blacklists>> GetBlacklistsAsync(IMongoCollection<Blacklists> collection, IGuild guild)
+            {
+                var blacklistsCursor = await collection.FindAsync(f => f.GuildId == guild.Id);
+                return await blacklistsCursor.ToListAsync();
+            }
+
+            private async Task<List<Blacklists>> GetCommandBlacklists(IMongoCollection<Blacklists> collection, IGuild guild, string name)
+            {
+                var blacklistsCursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
+                return await blacklistsCursor.ToListAsync();
             }
         }
     }
