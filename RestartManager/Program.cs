@@ -19,7 +19,7 @@ namespace RestartManager
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = "run",
+                    Arguments = "run -f Release",
                     WorkingDirectory = Path.Combine(Directory.GetCurrentDirectory(), "../Ruby Rose/"),
                     UseShellExecute = false,
                     CreateNoWindow = true,
