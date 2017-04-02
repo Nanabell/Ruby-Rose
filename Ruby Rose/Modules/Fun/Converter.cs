@@ -14,7 +14,7 @@ namespace RubyRose.Modules.Fun
         {
             [Command("Celsius")]
             [Summary("Convert Celsius into either Fahrenheit or Kelvin")]
-            [MinPermission(AccessLevel.User)]
+            [MinPermission(AccessLevel.User), RequireAllowed]
             public async Task Celcius(double input)
             {
                 var fahrenheit = (input * 9 / 5) + 32;
@@ -32,7 +32,7 @@ namespace RubyRose.Modules.Fun
 
             [Command("Fahrenheit")]
             [Summary("Convert Fahrenheit to Celsius & Kelvin")]
-            [MinPermission(AccessLevel.User)]
+            [MinPermission(AccessLevel.User), RequireAllowed]
             public async Task Fahrenheit(double input)
             {
                 var celsius = (input - 32) * 5 / 9;
@@ -49,7 +49,7 @@ namespace RubyRose.Modules.Fun
 
             [Command("Kelvin")]
             [Summary("Convert Kelvin to Celsius & Fahrenheit")]
-            [MinPermission(AccessLevel.User)]
+            [MinPermission(AccessLevel.User), RequireAllowed]
             public async Task Kelvin(double input)
             {
                 var celsius = input - 273.15;
