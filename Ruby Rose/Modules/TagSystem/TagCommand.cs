@@ -6,20 +6,21 @@ using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using Tag = RubyRose.MongoDB.Tag;
-using Serilog;
 using RubyRose.Database;
+using NLog;
+using Discord;
+using System.Collections.Generic;
 
 namespace RubyRose.Modules.TagSystem
 {
     [Name("Tag System"), Group]
     public class TagCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public TagCommand(IDependencyMap map)
         {
-            if (map == null) throw new ArgumentNullException(nameof(map));
             _mongo = map.Get<MongoClient>();
         }
 
@@ -29,51 +30,36 @@ namespace RubyRose.Modules.TagSystem
         public async Task Tag()
         {
             var sb = new StringBuilder();
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
-            if (cGuild.Tag != null)
-            {
-                sb.AppendLine("**Tags**:");
-                sb.AppendLine(string.Join(" ", cGuild.Tag.OrderBy(x => x.Name).Select(x => $"`{x.Name}`")));
-                await ReplyAsync($"{sb}");
-            }
-            else
-            {
-                Log.Error($"Faild to load Tags on {Context.Guild.Name}. None Existent");
-                await ReplyAsync("Failed to load Tags.\nReason: None existing");
-            }
+            var alltags = _mongo.GetCollection<Tags>(Context.Client);
+            var tags = await alltags.GetListAsync(Context.Guild);
+            logger.Debug($"[TagSystem] Loaded {tags.Count} Tags");
+
+            sb.AppendLine("**Tags**:");
+            sb.AppendLine(string.Join(" ", tags.OrderBy(x => x.Name).Select(x => $"`{x.Name}`")));
+            await ReplyAsync($"{sb}");
         }
 
         [Command("Tag")]
         [Summary("Use simply keywords to display a custom set response")]
         [MinPermission(AccessLevel.User), RequireAllowed]
-        public async Task Tag([Remainder] string keyWord)
+        public async Task Tag([Remainder] string name)
         {
-            keyWord = keyWord.ToLower();
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            name = name.ToLower();
+            var alltags = _mongo.GetCollection<Tags>(Context.Client);
+            var tag = await alltags.GetOneAsync(Context.Guild, name);
 
-            if (cGuild.Tag != null)
+            if (tag != null)
             {
-                var tag = cGuild.Tag.FirstOrDefault(t => t.Name == keyWord);
+                tag.LastUsed = DateTime.UtcNow;
+                tag.Uses++;
+                await alltags.SaveAsync(tag);
 
-                if (tag != null)
-                {
-                    cGuild.Tag[cGuild.Tag.IndexOf(tag)].Uses++;
-                    cGuild.Tag[cGuild.Tag.IndexOf(tag)].LastUsed = DateTime.UtcNow;
-                    await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
-                    await ReplyAsync(tag.Response);
-                }
-                else
-                {
-                    Log.Error($"Unable to find Tag with Name {keyWord} on {Context.Guild.Name}");
-                    await ReplyAsync($"Tag with the Name {keyWord} not found.");
-                }
+                await ReplyAsync(tag.Content);
             }
             else
             {
-                Log.Error($"Faild to load Tags on {Context.Guild.Name}. None Existent");
-                await ReplyAsync("Failed to load Tags.\nReason: None existing");
+                await ReplyAsync($"Tag {name} not existing");
+                logger.Warn($"[TagSystem] Tag {name} on {Context.Guild} not existent");
             }
         }
     }

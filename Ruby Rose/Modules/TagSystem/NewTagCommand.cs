@@ -1,20 +1,20 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using Discord;
 using Discord.Commands;
 using MongoDB.Driver;
+using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using Tag = RubyRose.MongoDB.Tag;
 using RubyRose.Database;
-using System.Linq;
-using Serilog;
-using Discord;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RubyRose.Modules.TagSystem
 {
     [Name("Tag System"), Group]
     public class NewTagCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public NewTagCommand(IDependencyMap map)
@@ -23,87 +23,75 @@ namespace RubyRose.Modules.TagSystem
         }
 
         [Command("NewTag")]
-        [Summary("Creates a new Tag")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task NewTag(string keyWord, [Remainder] string response)
+        public async Task NewTag(string name, [Remainder] string content)
         {
-            keyWord = keyWord.ToLower();
+            name = name.ToLower();
 
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            var allTags = _mongo.GetCollection<Tags>(Context.Client);
+            var tags = await GetTagsAsync(allTags, Context.Guild);
 
             var newTag = new Tags
             {
-                Name = keyWord,
-                Response = response,
+                GuildId = Context.Guild.Id,
+                Name = name,
+                Content = content,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Context.User.Id,
                 LastUsed = DateTime.MinValue,
                 Uses = 0
             };
 
-            if (cGuild.Tag != null)
+            if (!tags.Exists(x => x.Name == name))
             {
-                if (!cGuild.Tag.Any(t => t.Name == keyWord))
-                {
-                    cGuild.Tag.Add(newTag);
-                    await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
-                }
-                else
-                {
-                    Log.Error($"Failed to add Tag {keyWord} on {Context.Guild.Name}. Already existent");
-                    await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Can't create Tag {keyWord} since it is already existent"));
-                    return;
-                }
+                await allTags.InsertOneAsync(newTag);
+                await ReplyAsync($"Tag `{name.ToFirstUpper()}` added to database!");
+                logger.Info($"New Tag {name} on {Context.Guild.Name}");
             }
             else
             {
-                await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.AddToSet("Tag", newTag));
+                await ReplyAsync($"Tag {name.ToFirstUpper()} already existent");
+                logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
             }
-            Log.Information($"Added new Tag {newTag.Name} on {Context.Guild.Name}");
-            await ReplyAsync($"Tag `{keyWord.ToFirstUpper()}` successfully added!");
         }
 
         [Command("NewTag")]
-        [Summary("Creates a new Tag")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task NewTag(string keyWord, IAttachment attachment)
+        public async Task NewTag(string name, IAttachment attachment)
         {
-            keyWord = keyWord.ToLower();
+            name = name.ToLower();
 
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            var allTags = _mongo.GetCollection<Tags>(Context.Client);
+            var tags = await GetTagsAsync(allTags, Context.Guild);
 
             var newTag = new Tags
             {
-                Name = keyWord,
-                Response = attachment.Url,
+                GuildId = Context.Guild.Id,
+                Name = name,
+                Content = attachment.Url,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = Context.User.Id,
                 LastUsed = DateTime.MinValue,
                 Uses = 0
             };
 
-            if (cGuild.Tag != null)
+            if (!tags.Exists(x => x.Name == name))
             {
-                if (!cGuild.Tag.Any(t => t.Name == keyWord))
-                {
-                    cGuild.Tag.Add(newTag);
-                    await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
-                }
-                else
-                {
-                    Log.Error($"Failed to add Tag {keyWord} on {Context.Guild.Name}. Already existent");
-                    await Context.Channel.SendEmbedAsync(Embeds.Invalid($"Can't create Tag {keyWord} since it is already existent"));
-                    return;
-                }
+                await allTags.InsertOneAsync(newTag);
+                await ReplyAsync($"Tag `{name.ToFirstUpper()}` added to database!");
+                logger.Info($"New Tag {name} on {Context.Guild.Name}");
             }
             else
             {
-                await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.AddToSet("Tag", newTag));
+                await ReplyAsync($"Tag {name.ToFirstUpper()} already existent");
+                logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
             }
-            Log.Information($"Added new Tag {newTag.Name} on {Context.Guild.Name}");
-            await ReplyAsync($"Tag `{keyWord.ToFirstUpper()}` successfully added!");
+        }
+
+        private async Task<List<Tags>> GetTagsAsync(IMongoCollection<Tags> collection, IGuild guild)
+        {
+            var TagsCursor = await collection.FindAsync(f => f.GuildId == guild.Id);
+            return await TagsCursor.ToListAsync();
         }
     }
 }

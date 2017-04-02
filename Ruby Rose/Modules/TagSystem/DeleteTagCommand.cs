@@ -1,9 +1,10 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using MongoDB.Driver;
+using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
-using Serilog;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,36 +14,40 @@ namespace RubyRose.Modules.TagSystem
     [Name("Tag System"), Group]
     public class DeleteTagCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public DeleteTagCommand(IDependencyMap map)
         {
-            if (map == null) throw new ArgumentNullException(nameof(map));
             _mongo = map.Get<MongoClient>();
         }
 
         [Command("DeleteTag"), Alias("RemoveTag", "RmTag")]
         [Summary("Delete a Tag from the Database")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task DeleteTag(string keyWord)
+        public async Task DeleteTag(string name)
         {
-            keyWord = keyWord.ToLower();
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            name = name.ToLower();
+            var allTags = _mongo.GetCollection<Tags>(Context.Client);
+            var tag = await GetTagAsync(allTags, Context.Guild, name);
 
-            if (cGuild.Tag != null)
+            if (tag != null)
             {
-                var tag = cGuild.Tag.First(t => t.Name == keyWord);
-                cGuild.Tag.Remove(tag);
-                await c.UpdateOneAsync(g => g.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Tag", cGuild.Tag));
-                Log.Information($"Dropped Tag {tag.Name} on {Context.Guild.Name} from Db");
-                await ReplyAsync($"Tag `{tag.Name.ToFirstUpper()}` successfully Deleted!");
+                await allTags.DeleteAsync(tag);
+                await ReplyAsync($"Tag `{name.ToFirstUpper()}` dropped from Database");
+                logger.Info($"Deleted Tag {name} on {Context.Guild.Name}");
             }
             else
             {
-                Log.Error($"Unable to delete Tag {keyWord} on {Context.Guild.Name}. Not Existent in Db");
-                await Context.Channel.SendEmbedAsync(Embeds.NotFound($"Could not find a Tag with the name {keyWord}"));
+                await ReplyAsync($"Tag `{name.ToFirstUpper()}` not Existent");
+                logger.Warn($"Failed to delete Tag {name} on {Context.Guild.Name}, not Existent");
             }
+        }
+
+        private async Task<Tags> GetTagAsync(IMongoCollection<Tags> collection, IGuild guild, string name)
+        {
+            var TagsCursors = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
+            return await TagsCursors.FirstOrDefaultAsync();
         }
     }
 }
