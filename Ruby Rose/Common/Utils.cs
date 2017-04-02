@@ -2,6 +2,10 @@
 using RubyRose.Database;
 using System;
 using System.IO;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+using NLog.Layouts;
 
 namespace RubyRose.Common
 {
@@ -102,6 +106,38 @@ namespace RubyRose.Common
 
                 return span;
             }
+        }
+
+        public static void LoadNLogSettings()
+        {
+            var CcTarget = new ColoredConsoleTarget()
+            {
+                Layout = @"${date:HH\:mm\:ss} - [ ${pad:padding=5:inner=${level:uppercase=true}} ] ${message}${onexception:${newline}EXCEPTION\: ${exception:format=ToString}}",
+                Name = "Console",
+            };
+
+            LogManager.Configuration.AddTarget(CcTarget);
+            LogManager.Configuration.AddRuleForAllLevels("Console");
+
+            var nTarget = new FileTarget
+            {
+                Name = "File",
+                Layout = @"${date:HH\:mm\:ss} [ ${pad:padding=5:inner=${Level}} ] ${message}${onexception:${newline}${exception:format=ToString}}",
+                LineEnding = LineEndingMode.Default,
+                MaxArchiveFiles = 7,
+                ArchiveFileName = @"${basedir}../../../../Logs/RubyRose-{#}.log",
+                ArchiveDateFormat = "yyyMMdd",
+                ArchiveNumbering = ArchiveNumberingMode.Date,
+                ArchiveEvery = FileArchivePeriod.Day,
+                ArchiveOldFileOnStartup = true,
+                FileName = @"${basedir}../../../../Logs/RubyRose.log",
+                DeleteOldFileOnStartup = true
+            };
+
+            LogManager.Configuration.AddTarget(nTarget);
+            LogManager.Configuration.AddRuleForAllLevels("File");
+
+            LogManager.ReconfigExistingLoggers();
         }
 
         public static Credentials LoadConfig()
