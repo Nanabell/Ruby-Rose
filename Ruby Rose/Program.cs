@@ -11,7 +11,6 @@ namespace RubyRose
     internal class Program
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private static bool isTestBot = false;
 
         public static void Main(string[] args) => new Program().Start().GetAwaiter().GetResult();
 
@@ -43,7 +42,7 @@ namespace RubyRose
             logger.Trace("[Discord] Added Client, Mongodb & config to DependencyMap");
 
             logger.Trace($"[Gateway] Starting Login to Discord");
-            if (config.IsTestBot)
+            if (!config.IsTestBot)
                 await client.LoginAsync(TokenType.Bot, config.Token);
             else
                 await client.LoginAsync(TokenType.Bot, config.TestBotToken);
