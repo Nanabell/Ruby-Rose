@@ -110,6 +110,7 @@ namespace RubyRose.Common
 
         public static void LoadNLogSettings()
         {
+#if DEBUG
             var CcTarget = new ColoredConsoleTarget()
             {
                 Layout = @"${date:HH\:mm\:ss} - [ ${pad:padding=5:inner=${level:uppercase=true}} ] ${message}${onexception:${newline}EXCEPTION\: ${exception:format=ToString}}",
@@ -118,7 +119,7 @@ namespace RubyRose.Common
 
             LogManager.Configuration.AddTarget(CcTarget);
             LogManager.Configuration.AddRuleForAllLevels("Console");
-
+#endif
             var nTarget = new FileTarget
             {
                 Name = "File",
