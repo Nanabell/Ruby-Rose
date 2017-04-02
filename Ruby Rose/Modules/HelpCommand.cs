@@ -19,8 +19,7 @@ namespace RubyRose.Modules
 
         public HelpCommand(CommandService service, IDependencyMap map)
         {
-            if (service == null) throw new ArgumentNullException(nameof(service));
-            _service = service;
+            _service = service ?? throw new ArgumentNullException(nameof(service));
             _credentials = map.Get<Credentials>();
             _map = map;
         }
