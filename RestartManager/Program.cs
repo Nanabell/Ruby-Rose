@@ -20,12 +20,11 @@ namespace RestartManager
                 {
                     FileName = "dotnet",
                     Arguments = "run -f Release",
-                    WorkingDirectory = Path.Combine(Directory.GetCurrentDirectory(), "../Ruby Rose/"),
+                    WorkingDirectory = Path.Combine(Directory.GetCurrentDirectory(), @"../Ruby Rose/"),
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardError = true,
                     RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
                 }
             };
 
