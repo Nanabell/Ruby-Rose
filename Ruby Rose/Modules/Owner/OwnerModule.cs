@@ -8,12 +8,15 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
+using RubyRose.Common;
+using NLog;
 
 namespace RubyRose.Modules.Owner
 {
     [Name("Owner"), Group]
     public class OwnerModule : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public OwnerModule(IDependencyMap map)
@@ -43,18 +46,11 @@ namespace RubyRose.Modules.Owner
                 );
         }
 
-        [Command("Goodbye")]
+        [Command("updateTags")]
         [RequireOwner]
-        public async Task Goodbye(IUser user)
+        public async Task Test()
         {
-            await Context.Channel.SendFileAsync(@"Data/Images/byeshit.jpg", user.Mention);
-        }
-
-        [Command("Test")]
-        [RequireOwner]
-        public async Task Test([Remainder] string input = null)
-        {
-            await ReplyAsync("No");
+            await Task.CompletedTask;
         }
 
         [Command("Raw")]
