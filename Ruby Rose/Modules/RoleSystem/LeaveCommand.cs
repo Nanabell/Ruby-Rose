@@ -25,53 +25,50 @@ namespace RubyRose.Modules.RoleSystem
         [Command("Leave")]
         [Summary("Leavea role marked as Joinable")]
         [MinPermission(AccessLevel.User), RequireAllowed, Ratelimit(4, 1, Measure.Minutes)]
-        public async Task Leave([Remainder] string keyword)
+        [RequireBotPermission(GuildPermission.ManageRoles)]
+        public async Task Leave([Remainder] string name)
         {
             var roles = new List<IRole>();
             var sb = new StringBuilder();
 
-            keyword = keyword.ToLower();
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            name = name.ToLower();
+            var joinables = await _mongo.GetCollection<Joinables>(Context.Client).GetListAsync(Context.Guild);
 
-            if (cGuild.Joinable != null)
+            foreach (var word in name.Split(' '))
             {
-                foreach (var word in keyword.Split(' '))
+                if (word == "all")
                 {
-                    if (word == "all")
+                    joinables.ForEach(x =>
                     {
-                        cGuild.Joinable.ForEach(x =>
+                        if ((Context.User as IGuildUser).RoleIds.Contains(x.RoleId))
                         {
-                            if ((Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(x.Role.Id)))
-                            {
-                                roles.Add(Context.Guild.GetRole(x.Role.Id));
-                                sb.AppendLine(x.Keyword.ToFirstUpper());
-                            }
-                            else sb.AppendLine($"{x.Keyword.ToFirstUpper()} --already left");
-                        });
-                        break;
-                    }
-                    var result = cGuild.Joinable.FirstOrDefault(f => f.Keyword == word);
-                    if (result == null) continue;
+                            roles.Add(Context.Guild.GetRole(x.RoleId));
+                            sb.AppendLine(x.Name.ToFirstUpper());
+                        }
+                        else sb.AppendLine($"{x.Name.ToFirstUpper()} --already left");
+                    });
+                    break;
+                }
+                var result = joinables.FirstOrDefault(f => f.Name == word);
+                if (result == null) continue;
 
-                    if (!(Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(result.Role.Id)))
-                    {
-                        sb.AppendLine($"{result.Keyword.ToFirstUpper()} --already left");
-                        continue;
-                    }
-                    roles.Add(Context.Guild.GetRole(result.Role.Id));
-                    sb.AppendLine(result.Keyword.ToFirstUpper());
+                if (!(Context.User as IGuildUser).RoleIds.Contains(result.RoleId))
+                {
+                    sb.AppendLine($"{result.Name.ToFirstUpper()} --already left");
+                    continue;
                 }
+                roles.Add(Context.Guild.GetRole(result.RoleId));
+                sb.AppendLine(result.Name.ToFirstUpper());
+            }
 
-                if (roles.Count > 0)
-                {
-                    await (Context.User as SocketGuildUser).RemoveRolesAsync(roles);
-                    await Context.Channel.SendEmbedAsync(Embeds.Success("You left the roles for", sb.ToString()));
-                }
-                else
-                {
-                    await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
-                }
+            if (roles.Count > 0)
+            {
+                await (Context.User as SocketGuildUser).RemoveRolesAsync(roles);
+                await Context.Channel.SendEmbedAsync(Embeds.Success("You left the roles for", sb.ToString()));
+            }
+            else
+            {
+                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
             }
         }
     }

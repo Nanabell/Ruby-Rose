@@ -2,9 +2,10 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
+using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using Serilog;
+using RubyRose.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace RubyRose.Modules.RoleSystem
     [Name("Role System"), Group]
     public class JoinCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public JoinCommand(IDependencyMap map)
@@ -26,81 +28,77 @@ namespace RubyRose.Modules.RoleSystem
         [Command("Join")]
         [Summary("Join roles that are marked as joinable.")]
         [MinPermission(AccessLevel.User), RequireAllowed, Ratelimit(4, 1, Measure.Minutes)]
-        public async Task Join([Remainder] string keyword)
+        public async Task Join([Remainder] string name)
         {
             var roles = new List<IRole>();
             var sb = new StringBuilder();
 
-            keyword = keyword.ToLower();
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            name = name.ToLower();
+            var joinables = await _mongo.GetCollection<Joinables>(Context.Client).GetListAsync(Context.Guild);
 
-            if (cGuild.Joinable != null)
+            foreach (var word in name.Split(' '))
             {
-                foreach (var word in keyword.Split(' '))
+                if (word == "all")
                 {
-                    if (word == "all")
+                    foreach (var joinable in joinables)
                     {
-                        foreach (var join in cGuild.Joinable)
+                        if (joinable.Level > 0)
                         {
-                            if (join.Level > 0)
-                            {
-                                sb.AppendLine($"{join.Keyword.ToFirstUpper()} --cant join with all");
-                                continue;
-                            }
-                            if (!(Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(join.Role.Id)))
-                            {
-                                roles.Add(Context.Guild.GetRole(join.Role.Id));
-                                sb.AppendLine(join.Keyword.ToFirstUpper());
-                            }
-                            else sb.AppendLine($"{join.Keyword.ToFirstUpper()} --already joined");
-                        };
-                        break;
-                    }
-                    var result = cGuild.Joinable.FirstOrDefault(f => f.Keyword == word);
-                    if (result == null) continue;
-                    try
-                    {
-                        if (result.Level > 0)
-                        {
-                            var skip = false;
-                            var rolelist = cGuild.Joinable.Where(x => x.Level == result.Level).ToList();
-                            var userRoles = (Context.User as SocketGuildUser).Roles;
-                            foreach (var role in rolelist)
-                            {
-                                if (userRoles.Any(x => x.Id == role.Role.Id))
-                                {
-                                    sb.AppendLine($"{result.Keyword.ToFirstUpper()} --cant join, user has already a role of level {result.Level}");
-                                    skip = true;
-                                }
-                            }
-                            if (skip)
-                                continue;
+                            sb.AppendLine($"{joinable.Name.ToFirstUpper()} --cant join with all");
+                            continue;
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error($"Role Level Compare Faild:\n{e}");
-                    }
-
-                    if ((Context.User as SocketGuildUser).Roles.Contains(Context.Guild.GetRole(result.Role.Id)))
-                    {
-                        sb.AppendLine($"{result.Keyword.ToFirstUpper()} --already joined");
-                        continue;
-                    }
-                    roles.Add(Context.Guild.GetRole(result.Role.Id));
-                    sb.AppendLine(result.Keyword.ToFirstUpper());
+                        if (!(Context.User as IGuildUser).RoleIds.Contains(joinable.RoleId))
+                        {
+                            roles.Add(Context.Guild.GetRole(joinable.RoleId));
+                            sb.AppendLine(joinable.Name.ToFirstUpper());
+                        }
+                        else sb.AppendLine($"{joinable.Name.ToFirstUpper()} --already joined");
+                    };
+                    break;
                 }
-
-                if (roles.Count > 0)
+                var result = joinables.FirstOrDefault(f => f.Name == word);
+                if (result == null) continue;
+                try
                 {
-                    await (Context.User as SocketGuildUser).AddRolesAsync(roles, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
-                    await Context.Channel.SendEmbedAsync(Embeds.Success("You now have the roles for", sb.ToString()));
+                    if (result.Level > 0)
+                    {
+                        var skip = false;
+                        var rolelist = joinables.Where(x => x.Level == result.Level).ToList();
+                        var userRoles = (Context.User as SocketGuildUser).Roles;
+                        foreach (var role in rolelist)
+                        {
+                            if (userRoles.Any(x => x.Id == role.RoleId))
+                            {
+                                sb.AppendLine($"{result.Name.ToFirstUpper()} --cant join, user has already a role of level {result.Level}");
+                                skip = true;
+                            }
+                        }
+                        if (skip)
+                            continue;
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
+                    logger.Warn($"Role Level Compare Faild:\n{e}");
                 }
+
+                if ((Context.User as IGuildUser).RoleIds.Contains(result.RoleId))
+                {
+                    sb.AppendLine($"{result.Name.ToFirstUpper()} --already joined");
+                    continue;
+                }
+                roles.Add(Context.Guild.GetRole(result.RoleId));
+                sb.AppendLine(result.Name.ToFirstUpper());
+            }
+
+            if (roles.Count > 0)
+            {
+                await (Context.User as SocketGuildUser).AddRolesAsync(roles, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
+                await Context.Channel.SendEmbedAsync(Embeds.Success("You now have the roles for", sb.ToString()));
+            }
+            else
+            {
+                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
             }
         }
     }

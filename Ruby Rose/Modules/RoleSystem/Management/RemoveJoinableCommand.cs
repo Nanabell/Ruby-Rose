@@ -1,10 +1,10 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using MongoDB.Driver;
+using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
-using Serilog;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace RubyRose.Modules.RoleSystem.Management
@@ -12,6 +12,7 @@ namespace RubyRose.Modules.RoleSystem.Management
     [Name("Role System Management"), Group]
     public class RemoveJoinableCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public RemoveJoinableCommand(IDependencyMap map)
@@ -22,28 +23,30 @@ namespace RubyRose.Modules.RoleSystem.Management
         [Command("RemoveJoinable")]
         [Summary("Remove the marker from a marked Joinable role")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task RemoveJoinable(string keyword)
+        public async Task RemoveJoinable(string name)
         {
-            keyword = keyword.ToLower();
+            name = name.ToLower();
 
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstAsync();
+            var allJoinables = _mongo.GetCollection<Joinables>(Context.Client);
+            var joinable = await GetJoinableAsync(allJoinables, Context.Guild, name);
 
-            if (cGuild.Joinable != null)
+            if (joinable != null)
             {
-                if (cGuild.Joinable.Any(j => j.Keyword == keyword))
-                {
-                    cGuild.Joinable.Remove(cGuild.Joinable.First(j => j.Keyword == keyword));
-                    await c.UpdateOneAsync(f => f.Id == Context.Guild.Id, Builders<DatabaseModel>.Update.Set("Joinable", cGuild.Joinable));
-                    Log.Information($"Dropped joinable {keyword} from Db");
-                    await Context.Channel.SendEmbedAsync(Embeds.Success("Success", $"Dropped Joinable {keyword} from db"));
-                }
-                else
-                {
-                    Log.Error("Unable to Remove Joinable. Not Existent");
-                    await Context.Channel.SendEmbedAsync(Embeds.NotFound($"Unable to find a Joinable Role with the keyword {keyword}."));
-                }
+                await allJoinables.DeleteAsync(joinable);
+                await ReplyAsync($"Joinable `{name}` dropped from Database");
+                logger.Info($"Deleted Joinable {name} on {Context.Guild.Name}");
             }
+            else
+            {
+                logger.Warn($"Failed to delete joinable {name} on {Context.Guild.Name}, not Existent");
+                await ReplyAsync($"Joinable `{name.ToFirstUpper()}` not Existent");
+            }
+        }
+
+        private async Task<Joinables> GetJoinableAsync(IMongoCollection<Joinables> collection, IGuild guild, string name)
+        {
+            var joinablesCursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
+            return await joinablesCursor.FirstOrDefaultAsync();
         }
     }
 }
