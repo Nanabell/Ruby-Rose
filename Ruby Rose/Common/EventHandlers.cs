@@ -35,14 +35,35 @@ namespace RubyRose.Common
 
         private async Task Ready()
         {
+            logger.Debug($"[EventHandler] Loading CustomReactions Settings");
+            RwbyFight.MongoLoader(_mongo, _client);
+            logger.Debug($"[EventHandler] Loading AnnounceExecutionResults Settings");
+            CommandHandler.MongoLoader(_mongo, _client);
+
             logger.Info($"[Gateway] Set Game to: {_credentials.NowPlaying}");
             await _client.SetGameAsync(_credentials.NowPlaying);
         }
 
-        private Task GuildAvailable(SocketGuild guild)
+        private async Task GuildAvailable(SocketGuild guild)
         {
             logger.Info($"[Gateway] Connected to {guild.Name}");
-            return Task.CompletedTask;
+
+            var allSettings = _mongo.GetCollection<Settings>(_client);
+            var settings = await allSettings.Find("{}").ToListAsync();
+
+            logger.Debug($"[Database] Checking if Guild {guild.Name} is Existent in Database");
+            if (!settings.Exists(s => s.GuildId == guild.Id))
+            {
+                var newsettings = new Settings
+                {
+                    GuildId = guild.Id,
+                    CustomReactions = true,
+                    ExecutionErrorAnnounce = true
+                };
+                logger.Debug($"[Database] Adding missing Guild {guild.Name} to Database");
+                await allSettings.InsertOneAsync(newsettings);
+            }
+            else logger.Debug($"Guild {guild.Name} Existent");
         }
 
         private Task LogEvents(LogMessage msg)

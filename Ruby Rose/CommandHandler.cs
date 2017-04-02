@@ -7,6 +7,7 @@ using RubyRose.Common;
 using RubyRose.Common.TypeReaders;
 using RubyRose.Database;
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -15,7 +16,9 @@ namespace RubyRose
 {
     public class CommandHandler
     {
+        private static bool temp;
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static ConcurrentDictionary<ulong, bool> IsEnabled = new ConcurrentDictionary<ulong, bool>();
         private DiscordSocketClient _client;
         private CommandService _commandService;
         private MongoClient _mongo;
@@ -53,18 +56,23 @@ namespace RubyRose
                             $" {message.Content.Substring(GetCommandName(commandInfo, message, argPos).Length + _credentials.Prefix.Length)}" +
                             $" => {result.Error}");
 
-                        if (result is ExecuteResult)
+                        IsEnabled.TryGetValue(context.Guild.Id, out temp);
+                        if (temp)
                         {
-                            ExecuteError(context, (ExecuteResult)result, searchResult);
+                            if (result is ExecuteResult)
+                            {
+                                ExecuteError(context, (ExecuteResult)result, searchResult);
+                            }
+                            else if (result is PreconditionResult)
+                            {
+                                await context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition(((PreconditionResult)result).ErrorReason));
+                            }
+                            else if (result is ParseResult)
+                            {
+                                await context.Channel.SendEmbedAsync(Embeds.Invalid(((ParseResult)result).ErrorReason));
+                            }
                         }
-                        else if (result is PreconditionResult)
-                        {
-                            await context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition(((PreconditionResult)result).ErrorReason));
-                        }
-                        else if (result is ParseResult)
-                        {
-                            await context.Channel.SendEmbedAsync(Embeds.Invalid(((ParseResult)result).ErrorReason));
-                        }
+                        else logger.Warn($"[Command] Suppressing Result on behalf of settings");
                     }
                     else
                     {
@@ -80,6 +88,14 @@ namespace RubyRose
                     logger.Error(e, "[Command] Something went wrong Executing a Command");
                 }
             });
+        }
+
+        public static void MongoLoader(MongoClient mongo, DiscordSocketClient client)
+        {
+            var allSettings = mongo.GetCollection<Settings>(client).Find("{}").ToList();
+
+            foreach (var setting in allSettings)
+                IsEnabled.AddOrUpdate(setting.GuildId, setting.ExecutionErrorAnnounce, (key, oldvalue) => setting.ExecutionErrorAnnounce);
         }
 
         private string GetCommandName(CommandInfo info, SocketUserMessage message, int argPos)

@@ -12,7 +12,7 @@ namespace RubyRose.Common
 {
     public interface IIndexed
     {
-        ObjectId _id { get; }
+        ObjectId _id { get; set; }
         ulong GuildId { get; set; }
     }
 

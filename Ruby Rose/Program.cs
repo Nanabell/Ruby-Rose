@@ -42,11 +42,8 @@ namespace RubyRose
             map.Add(config);
             logger.Trace("[Discord] Added Client, Mongodb & config to DependencyMap");
 
-            var events = new EventHandlers(map);
-            events.Install();
-
             logger.Trace($"[Gateway] Starting Login to Discord");
-            if (!isTestBot)
+            if (isTestBot)
                 await client.LoginAsync(TokenType.Bot, config.Token);
             else
                 await client.LoginAsync(TokenType.Bot, config.TestBotToken);
@@ -55,6 +52,10 @@ namespace RubyRose
 
             logger.Debug("[CommandService] Installing Command Handler");
             await handler.Install(map);
+
+            logger.Debug("[EventHandler] Installing Event Handler");
+            var events = new EventHandlers(map);
+            events.Install();
 
             await Task.Delay(-1);
         }
