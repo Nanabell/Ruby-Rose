@@ -33,7 +33,7 @@ namespace RubyRose.Common.Preconditions
         public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
         {
             _mongo = map.Get<MongoClient>();
-            var access = GetPermissions(_mongo, context, _level);
+            var access = GetPermissionsAsync(_mongo, context, _level);
 
             if (_level == AccessLevel.Special)
             {
@@ -42,7 +42,7 @@ namespace RubyRose.Common.Preconditions
             return Task.FromResult(access >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("Not enough permissions!"));
         }
 
-        public AccessLevel GetPermissions(MongoClient mongo, ICommandContext context, AccessLevel requestedLvl)
+        public AccessLevel GetPermissionsAsync(MongoClient mongo, ICommandContext context, AccessLevel requestedLvl)
         {
             if (context.User.IsBot) return AccessLevel.Blocked;
 
@@ -55,12 +55,11 @@ namespace RubyRose.Common.Preconditions
 
             if (requestedLvl == AccessLevel.Special)
             {
-                var c = mongo.GetDiscordDb(context.Client);
-                var cGuild = c.Find(x => x.Id == context.Guild.Id).First();
+                var users = _mongo.GetCollection<Users>(context.Client).GetListAsync(context.Guild).GetAwaiter().GetResult();
 
-                if (cGuild.User.Any(u => u.Id == user.Id))
+                if (users.Exists(x => x.UserId == user.Id))
                 {
-                    var cUser = cGuild.User.First(u => u.Id == user.Id);
+                    var cUser = users.First(u => u.UserId == user.Id);
                     if (cUser.IsSpecial)
                         return AccessLevel.Special;
                 }
