@@ -1,22 +1,18 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Discord.Addons.EmojiTools;
-using Discord;
-using System.Text.RegularExpressions;
-using System.Reflection;
-using System.IO;
-using MoreLinq;
+﻿using Discord.WebSocket;
+using NLog;
 using System.Collections.Concurrent;
-using Serilog;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace RubyRose.Custom_Reactions
 {
     public static class RwbyFight
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private static bool temp;
         private static ConcurrentDictionary<ulong, bool> WeissF = new ConcurrentDictionary<ulong, bool>();
         private static ConcurrentDictionary<ulong, bool> RubyF = new ConcurrentDictionary<ulong, bool>();
@@ -34,7 +30,7 @@ namespace RubyRose.Custom_Reactions
                         direc = direc.Parent;
                     }
                     while (direc.Name != "Ruby Rose");
-                    Log.Information("Triggered Rwby Fight Gif");
+                    logger.Info("Triggered Rwby Fight Gif");
                     await arg.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
                     WeissF.TryRemove(arg.Channel.Id, out temp);
                     RubyF.TryRemove(arg.Channel.Id, out temp);
@@ -55,7 +51,7 @@ namespace RubyRose.Custom_Reactions
                         direc = direc.Parent;
                     }
                     while (direc.Name != "Ruby Rose");
-                    Log.Information("Triggered Rwby Fight Gif");
+                    logger.Info("Triggered Rwby Fight Gif");
                     await arg.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
                     WeissF.TryRemove(arg.Channel.Id, out temp);
                     RubyF.TryRemove(arg.Channel.Id, out temp);

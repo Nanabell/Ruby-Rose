@@ -1,11 +1,8 @@
 ﻿using Discord.Commands;
-using RubyRose.Common;
-using Serilog;
+using NLog;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -14,6 +11,8 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class PullCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         public static async Task<string> GitPull(string branch)
         {
             var proc = new Process()
@@ -35,8 +34,10 @@ namespace RubyRose.Modules.Owner
                 if (error != null)
                 {
                     if (Regex.IsMatch(error, "Couldn't find remote ref"))
+                    {
+                        logger.Warn(error);
                         return error.Substring(7);
-                    Log.Fatal(error);
+                    }
                 }
 
                 if (Regex.IsMatch(report, "Already up-to-date"))

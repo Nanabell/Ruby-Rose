@@ -1,12 +1,12 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using MongoDB.Driver;
+using NLog;
 using RubyRose.Common;
 using RubyRose.Common.TypeReaders;
 using RubyRose.Database;
-using Serilog;
 using System;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -15,8 +15,10 @@ namespace RubyRose
 {
     public class CommandHandler
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private DiscordSocketClient _client;
         private CommandService _commandService;
+        private MongoClient _mongo;
         private IDependencyMap _map;
         private Credentials _credentials;
 
@@ -42,10 +44,15 @@ namespace RubyRose
                 {
                     var result = await _commandService.ExecuteAsync(context, argPos, _map);
 
-                    Log.Information($"{commandInfo?.Name ?? message.Content.Substring(argPos).Split(' ').First()} => {(result.IsSuccess ? result.ToString() : result.Error.ToString())} | [{(context.IsPrivate ? "Private" : context.Guild.Name)}] {(context.IsPrivate ? "" : $"#{context.Channel.Name} ")}({context.User}) || {message.Content.Substring(message.Content.Split(' ').First().Length)}");
-
                     if (!result.IsSuccess)
                     {
+                        logger.Warn($"[Commanmd] {GetCommandName(commandInfo, message, argPos)}" +
+                            $" [{(context.IsPrivate ? "Private" : context.Guild.Name)}]" +
+                            $" {(context.IsPrivate ? "" : $"#{context.Channel.Name} ")}" +
+                            $"({context.User})" +
+                            $" {message.Content.Substring(GetCommandName(commandInfo, message, argPos).Length + _credentials.Prefix.Length)}" +
+                            $" => {result.Error}");
+
                         if (result is ExecuteResult)
                         {
                             ExecuteError(context, (ExecuteResult)result, searchResult);
@@ -59,34 +66,64 @@ namespace RubyRose
                             await context.Channel.SendEmbedAsync(Embeds.Invalid(((ParseResult)result).ErrorReason));
                         }
                     }
+                    else
+                    {
+                        logger.Info($"[Commanmd] {GetCommandName(commandInfo, message, argPos)}" +
+                            $" [{(context.IsPrivate ? "Private" : context.Guild.Name)}]" +
+                            $" {(context.IsPrivate ? "" : $"#{context.Channel.Name} ")}" +
+                            $"({context.User})" +
+                            $" {message.Content.Substring(GetCommandName(commandInfo, message, argPos).Length + _credentials.Prefix.Length)}");
+                    }
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    logger.Error(e, "[Command] Something went wrong Executing a Command");
                 }
             });
         }
 
+        private string GetCommandName(CommandInfo info, SocketUserMessage message, int argPos)
+        {
+            if (info != null)
+            {
+                if (!info.Module.IsSubmodule)
+                    return info.Name;
+                else return info.Module.Name + " " + info.Name;
+            }
+            else return message.Content.Substring(argPos).Split(' ').First();
+        }
+
         public async Task Install(IDependencyMap map)
         {
-            _commandService = new CommandService(new CommandServiceConfig() { LogLevel = LogSeverity.Info, ThrowOnError = true });
+            logger.Debug("[CommandService] Creating new CommandService");
+            _commandService = new CommandService(new CommandServiceConfig()
+            {
+                LogLevel = LogSeverity.Info,
+#if DEBUG
+                DefaultRunMode = RunMode.Sync,
+                ThrowOnError = true
+#elif RELEASE
+                DefaultRunMode = RunMode.Async
+#endif
+            });
+            logger.Trace("[CommandService] Adding TypeReaders to CommandService");
+            _commandService.AddTypeReader<CommandInfo>(new CommandInfoTypeReader(_commandService));
             _commandService.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
             _client = map.Get<DiscordSocketClient>();
+            _mongo = map.Get<MongoClient>();
             _credentials = map.Get<Credentials>();
             _map = map;
 
+            logger.Debug("[CommandService] Loading Modules from Entry Assembly");
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
 
+            logger.Debug("[CommandService] Starting Actual CommandHandler");
             _client.MessageReceived += HandleCommand;
         }
 
         private static async void ExecuteError(ICommandContext context, ExecuteResult executeResult, SearchResult searchResult)
         {
-            File.WriteAllText($"Crash-Reports/{DateTime.Now.ToFileTimeUtc()}.log",
-                $"Exeption Occured at: {executeResult.Exception}, Stacktrace:\n{executeResult.Exception.StackTrace}");
-            File.WriteAllText("Crash-Reports/latest.log",
-                $"Exeption Occured at: {executeResult.Exception}, Stacktrace:\n{executeResult.Exception.StackTrace}");
-
+            logger.Error(executeResult.Exception, $"[Command] An Error Occured on {context.Guild.Name} caused by {context.User} Exeption:");
             var embed = new EmbedBuilder
             {
                 Title = "Error executing command",
@@ -105,7 +142,7 @@ namespace RubyRose
             {
                 await context.Channel.SendEmbedAsync(embed);
             }
-            catch { Log.Error("Not enough Permission to Display Error Message. Gracefull fail.."); }
+            catch { logger.Warn("[Command]  Not enough Permission to Display Error Message. Gracefull fail.."); }
         }
     }
 }

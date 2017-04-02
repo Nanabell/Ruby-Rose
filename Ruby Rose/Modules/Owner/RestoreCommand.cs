@@ -1,6 +1,6 @@
 ﻿using Discord.Commands;
+using NLog;
 using RubyRose.Common;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +14,8 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class RestoreCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         public static async Task<string> dotnetRestore(string verbosity)
         {
             var proc = new Process
@@ -34,7 +36,7 @@ namespace RubyRose.Modules.Owner
                 var error = await proc.StandardError.ReadToEndAsync();
                 if (error != null)
                 {
-                    Log.Fatal(error);
+                    logger.Error(error);
                 }
 
                 if (Regex.IsMatch(report, @"Restore completed in \d.+? sec"))

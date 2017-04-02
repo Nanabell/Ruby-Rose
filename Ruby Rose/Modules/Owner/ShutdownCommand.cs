@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Owner
 {
-    [Name("Owner")]
+    [Name("System")]
     public class ShutdownCommand : ModuleBase
     {
         [Command("Shutdown")]

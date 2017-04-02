@@ -1,6 +1,6 @@
 ﻿using Discord.Commands;
+using NLog;
 using RubyRose.Common;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +14,8 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class BuildCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         public static async Task<string> dotnetBuild(string configuration, string verbosity)
         {
             var proc = new Process
@@ -35,7 +37,7 @@ namespace RubyRose.Modules.Owner
 
                 if (error != "")
                 {
-                    Log.Fatal(error);
+                    logger.Error(error);
                 }
 
                 if (Regex.IsMatch(report, @"Build \w+\."))

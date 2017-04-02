@@ -3,11 +3,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using NLog;
 
 namespace RubyRose.Common
 {
     public static class Extentions
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         public static string LimitLengh(this string str, int maxLengh) => str.Length <= maxLengh
             ? str
             : str.Substring(0, maxLengh);
@@ -31,6 +34,7 @@ namespace RubyRose.Common
             {
                 if ((await commandInfo.CheckPreconditionsAsync(context, map)).IsSuccess)
                 {
+                    logger.Trace($"[Precondition] Command {commandInfo.Name} passed all Checks");
                     ret.Add(commandInfo);
                 }
             }

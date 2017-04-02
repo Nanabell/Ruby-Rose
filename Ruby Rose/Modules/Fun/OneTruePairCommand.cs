@@ -1,10 +1,10 @@
 ﻿using Discord;
 using Discord.Commands;
 using MongoDB.Driver;
+using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
-using Serilog;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,6 +14,7 @@ namespace RubyRose.Modules.Fun
     [Name("Fun"), Group]
     public class OneTruePairCommand : ModuleBase
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public OneTruePairCommand(IDependencyMap map)
@@ -30,15 +31,14 @@ namespace RubyRose.Modules.Fun
             var rnd = new Random();
             var selectionRole = Context.Guild.EveryoneRole;
 
-            var c = _mongo.GetDiscordDb(Context.Client);
-            var cGuild = await c.Find(g => g.Id == Context.Guild.Id).FirstOrDefaultAsync();
+            var oneTruePair = _mongo.GetCollection<OneTruePairs>(Context.Client).GetListAsync(Context.Guild).Result.FirstOrDefault();
 
-            if (cGuild.OneTruePair != null)
+            if (oneTruePair != null)
             {
-                selectionRole = Context.Guild.GetRole(cGuild.OneTruePair.Id);
-                Log.Verbose($"OneTruePair Role found and accepted: {selectionRole.Name}");
+                selectionRole = Context.Guild.GetRole(oneTruePair.RoleId);
+                logger.Info($"OneTruePair Role {selectionRole.Name} on {Context.Guild} accepted");
             }
-            else Log.Verbose("No OneTruePair Role set defaulting to Everyone Role");
+            else logger.Warn($"No OneTruePair Role set on {Context.Guild} defaulting to @everyone Role");
 
             var allUsers = await Context.Guild.GetUsersAsync();
             var users = allUsers.Where(x => x.GetRoles().Any(r => r == selectionRole)).ToList();
