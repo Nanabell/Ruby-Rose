@@ -63,15 +63,15 @@ namespace RubyRose.Common
                 logger.Debug($"[Database] Adding missing Guild {guild.Name} to Database");
                 await allSettings.InsertOneAsync(newsettings);
             }
-            else logger.Debug($"Guild {guild.Name} Existent");
+            else logger.Debug($"[Database] Guild {guild.Name} Existent");
         }
 
         private Task LogEvents(LogMessage msg)
         {
             switch (msg.Severity)
             {
-                /*case LogSeverity.Debug:
-                    { logger.Trace($"[{msg.Source}] {msg.Message}"); break; }*/
+                case LogSeverity.Debug:
+                    { logger.Trace($"[{msg.Source}] {msg.Message}"); break; }
                 case LogSeverity.Verbose:
                     { logger.Debug($"[{msg.Source}] {msg.Message}"); break; }
                 case LogSeverity.Info:
