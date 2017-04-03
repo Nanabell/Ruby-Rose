@@ -27,6 +27,13 @@ namespace RubyRose.Common
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        /// <summary>
+        /// Directly Get the Collection of the Mongoclient.
+        /// Username of Bot will be used as DatabaseNamespace
+        /// </summary>
+        /// <typeparam name="T">The Collection to Retrive</typeparam>
+        /// <param name="client">Used to get the Name of the Database</param>
+        /// <returns>Collection</returns>
         public static IMongoCollection<T> GetCollection<T>(this MongoClient mongo, IDiscordClient client)
         {
             logger.Trace($"[Database] Connecting to Database {client.CurrentUser.Username.Replace(" ", "")}");
@@ -36,6 +43,9 @@ namespace RubyRose.Common
             return db.GetCollection<T>(typeof(T).Name);
         }
 
+        /// <summary>
+        /// Get the First Entry in a Collection. <see cref="IIndexed"/> Required.
+        /// </summary>
         public static async Task<T> FirstAsync<T>(this IMongoCollection<T> collection) where T : IIndexed
         {
             logger.Trace($"[Database] Loading Documents for {collection.CollectionNamespace}");
