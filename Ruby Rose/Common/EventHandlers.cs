@@ -70,8 +70,8 @@ namespace RubyRose.Common
         {
             switch (msg.Severity)
             {
-                case LogSeverity.Debug:
-                    { logger.Trace($"[{msg.Source}] {msg.Message}"); break; }
+                /*case LogSeverity.Debug:
+                    { logger.Trace($"[{msg.Source}] {msg.Message}"); break; }*/
                 case LogSeverity.Verbose:
                     { logger.Debug($"[{msg.Source}] {msg.Message}"); break; }
                 case LogSeverity.Info:
