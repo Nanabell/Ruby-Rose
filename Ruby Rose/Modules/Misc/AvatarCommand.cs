@@ -32,10 +32,6 @@ namespace RubyRose.Modules.Misc
             });
 
             embed.ImageUrl = user.GetAvatarUrl(ImageFormat.Auto, 1024);
-            embed.WithFooter(footer =>
-            {
-                footer.Text = "I KNOW... NO ETA. DONT ASK";
-            });
             embed.WithCurrentTimestamp();
 
             return embed;
