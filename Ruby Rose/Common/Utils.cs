@@ -116,13 +116,29 @@ namespace RubyRose.Common
                 Layout = @"${date:HH\:mm\:ss} - [ ${pad:padding=5:inner=${level:uppercase=true}} ] ${message}${onexception:${newline}EXCEPTION\: ${exception:format=ToString}}",
                 Name = "Console",
             };
-
             LogManager.Configuration.AddTarget(CcTarget);
             LogManager.Configuration.AddRuleForAllLevels("Console");
 #endif
-            var nTarget = new FileTarget
+            var debugTarget = new FileTarget
             {
-                Name = "File",
+                Name = "Debug",
+                Layout = @"${date:HH\:mm\:ss} [ ${pad:padding=5:inner=${Level}} ] ${message}${onexception:${newline}${exception:format=ToString}}",
+                LineEnding = LineEndingMode.Default,
+                MaxArchiveFiles = 7,
+                ArchiveFileName = @"${basedir}../../../../Logs/Debug-{#}.log",
+                ArchiveDateFormat = "yyyMMdd",
+                ArchiveNumbering = ArchiveNumberingMode.Date,
+                ArchiveEvery = FileArchivePeriod.Day,
+                ArchiveOldFileOnStartup = true,
+                FileName = @"${basedir}../../../../Logs/Debug.log",
+                DeleteOldFileOnStartup = true
+            };
+            LogManager.Configuration.AddTarget(debugTarget);
+            LogManager.Configuration.AddRule(LogLevel.Debug, LogLevel.Fatal, "Debug");
+
+            var mainTarget = new FileTarget
+            {
+                Name = "Main",
                 Layout = @"${date:HH\:mm\:ss} [ ${pad:padding=5:inner=${Level}} ] ${message}${onexception:${newline}${exception:format=ToString}}",
                 LineEnding = LineEndingMode.Default,
                 MaxArchiveFiles = 7,
@@ -134,9 +150,8 @@ namespace RubyRose.Common
                 FileName = @"${basedir}../../../../Logs/RubyRose.log",
                 DeleteOldFileOnStartup = true
             };
-
-            LogManager.Configuration.AddTarget(nTarget);
-            LogManager.Configuration.AddRuleForAllLevels("File");
+            LogManager.Configuration.AddTarget(mainTarget);
+            LogManager.Configuration.AddRule(LogLevel.Info, LogLevel.Fatal, "Main");
 
             LogManager.ReconfigExistingLoggers();
         }
