@@ -17,18 +17,8 @@ namespace RubyRose.Custom_Reactions
     public static class RwbyFight
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private static ConcurrentDictionary<ulong, bool> IsEnabled = new ConcurrentDictionary<ulong, bool>();
-        private static bool temp;
         private static ConcurrentDictionary<ulong, bool> WeissF = new ConcurrentDictionary<ulong, bool>();
         private static ConcurrentDictionary<ulong, bool> RubyF = new ConcurrentDictionary<ulong, bool>();
-
-        public static void MongoLoader(MongoClient mongo, DiscordSocketClient client)
-        {
-            var allSettings = mongo.GetCollection<Settings>(client).Find("{}").ToList();
-
-            foreach (var setting in allSettings)
-                IsEnabled.AddOrUpdate(setting.GuildId, setting.CustomReactions, (key, oldvalue) => temp);
-        }
 
         public static async Task MessageHandler(SocketMessage arg)
         {
@@ -39,7 +29,7 @@ namespace RubyRose.Custom_Reactions
             var guild = user.Guild;
             if (guild == null) return;
 
-            IsEnabled.TryGetValue(guild.Id, out temp);
+            SettingsManager.CustomReactions.TryGetValue(guild.Id, out var temp);
             if (temp)
             {
                 if (Regex.IsMatch(arg.Content, "<:Heated2:\\d+>"))

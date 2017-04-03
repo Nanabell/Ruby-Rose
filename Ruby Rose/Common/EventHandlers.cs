@@ -35,10 +35,8 @@ namespace RubyRose.Common
 
         private async Task Ready()
         {
-            logger.Debug($"[EventHandler] Loading CustomReactions Settings");
-            RwbyFight.MongoLoader(_mongo, _client);
-            logger.Debug($"[EventHandler] Loading AnnounceExecutionResults Settings");
-            CommandHandler.MongoLoader(_mongo, _client);
+            logger.Info("[SettingsManager] Loading Settings for Guilds");
+            await SettingsManager.LoadSettings();
 
             logger.Info($"[Gateway] Set Game to: {_credentials.NowPlaying}");
             await _client.SetGameAsync(_credentials.NowPlaying);

@@ -39,25 +39,19 @@ namespace RubyRose.Modules.Moderation
 
         [Command("Set")]
         [MinPermission(AccessLevel.ServerModerator)]
-        public async Task Config(bool CustomReactions, bool ExecutResultAnnouncements)
+        public async Task Config(bool CustomReactions, bool ResultAnnounce)
         {
-            var settings = _mongo.GetCollection<Settings>(Context.Client);
-            var setting = settings.Find(g => g.GuildId == Context.Guild.Id).First();
             var sb = new StringBuilder();
-
-            setting.CustomReactions = CustomReactions;
-            setting.ExecutionErrorAnnounce = ExecutResultAnnouncements;
+            SettingsManager.CustomReactions.AddOrUpdate(Context.Guild.Id, CustomReactions, (key, oldvalue) => CustomReactions);
+            SettingsManager.ResultAnnounce.AddOrUpdate(Context.Guild.Id, ResultAnnounce, (key, oldvalue) => ResultAnnounce);
 
             sb.AppendLine($"Settings for {Context.Guild.Name} are now:");
             sb.AppendLine("```");
-            sb.AppendLine($"CustomReactions = {setting.CustomReactions}");
-            sb.AppendLine($"Announce_ExecutionResult = {setting.ExecutionErrorAnnounce}");
+            sb.AppendLine($"CustomReactions = {CustomReactions}");
+            sb.AppendLine($"Announce_ExecutionResult = {ResultAnnounce}");
             sb.Append("```");
 
-            await settings.SaveAsync(setting);
-
-            CommandHandler.MongoLoader(_mongo, Context.Client as DiscordSocketClient);
-            RwbyFight.MongoLoader(_mongo, Context.Client as DiscordSocketClient);
+            await SettingsManager.SaveSettings();
 
             await ReplyAsync($"{sb}");
         }

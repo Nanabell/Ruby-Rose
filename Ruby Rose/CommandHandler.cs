@@ -16,9 +16,7 @@ namespace RubyRose
 {
     public class CommandHandler
     {
-        private static bool temp;
         private static Logger logger = LogManager.GetCurrentClassLogger();
-        private static ConcurrentDictionary<ulong, bool> IsEnabled = new ConcurrentDictionary<ulong, bool>();
         private DiscordSocketClient _client;
         private CommandService _commandService;
         private MongoClient _mongo;
@@ -56,7 +54,7 @@ namespace RubyRose
                             $" {message.Content.Substring(GetCommandName(commandInfo, message, argPos).Length + _credentials.Prefix.Length)}" +
                             $" => {result.Error}");
 
-                        IsEnabled.TryGetValue(context.Guild.Id, out temp);
+                        SettingsManager.ResultAnnounce.TryGetValue(context.Guild.Id, out var temp);
                         if (temp)
                         {
                             if (result is ExecuteResult)
@@ -88,14 +86,6 @@ namespace RubyRose
                     logger.Error(e, "[Command] Something went wrong Executing a Command");
                 }
             });
-        }
-
-        public static void MongoLoader(MongoClient mongo, DiscordSocketClient client)
-        {
-            var allSettings = mongo.GetCollection<Settings>(client).Find("{}").ToList();
-
-            foreach (var setting in allSettings)
-                IsEnabled.AddOrUpdate(setting.GuildId, setting.ExecutionErrorAnnounce, (key, oldvalue) => setting.ExecutionErrorAnnounce);
         }
 
         private string GetCommandName(CommandInfo info, SocketUserMessage message, int argPos)
