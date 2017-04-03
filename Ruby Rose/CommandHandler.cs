@@ -133,7 +133,7 @@ namespace RubyRose
             logger.Debug("[CommandService] Loading Modules from Entry Assembly");
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
 
-            logger.Debug("[CommandService] Starting Actual CommandHandler");
+            logger.Info("[CommandService] Starting CommandHandler");
             _client.MessageReceived += HandleCommand;
         }
 

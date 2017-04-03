@@ -21,7 +21,7 @@ namespace RubyRose
             logger.Debug("[Configuration] Loading configuration");
             var config = Utils.LoadConfig();
 
-            logger.Trace("[Discord] Initiating DiscordClient");
+            logger.Debug("[Discord] Initiating DiscordClient");
             var client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,

@@ -53,7 +53,7 @@ namespace RubyRose.Custom_Reactions
                             direc = direc.Parent;
                         }
                         while (direc.Name != "Ruby Rose");
-                        logger.Info("Triggered Rwby Fight Gif");
+                        logger.Info("[CustomReactions] Triggered Rwby Fight Gif");
                         await arg.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
                         WeissF.TryRemove(arg.Channel.Id, out temp);
                         RubyF.TryRemove(arg.Channel.Id, out temp);
@@ -74,7 +74,7 @@ namespace RubyRose.Custom_Reactions
                             direc = direc.Parent;
                         }
                         while (direc.Name != "Ruby Rose");
-                        logger.Info("Triggered Rwby Fight Gif");
+                        logger.Info("[CustomReactions] Triggered Rwby Fight Gif");
                         await arg.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
                         WeissF.TryRemove(arg.Channel.Id, out temp);
                         RubyF.TryRemove(arg.Channel.Id, out temp);
