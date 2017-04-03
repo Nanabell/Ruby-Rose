@@ -48,10 +48,7 @@ namespace RubyRose
             await SettingsManager.Install(map);
 
             logger.Trace($"[Gateway] Starting Login to Discord");
-            if (!config.IsTestBot)
-                await client.LoginAsync(TokenType.Bot, config.Token);
-            else
-                await client.LoginAsync(TokenType.Bot, config.TestBotToken);
+            await client.LoginAsync(TokenType.Bot, (config.IsTestBot ? config.TestBotToken : config.Token));
             logger.Info("[Gateway] Starting Bot");
             await client.StartAsync();
 
