@@ -32,7 +32,6 @@ namespace RubyRose
 
             logger.Debug("[Database] Connecting to MongoDb");
             var mongo = new MongoClient(config.Database.Mongo);
-            //Quartz later here
             var handler = new CommandHandler();
 
             logger.Debug("[Discord] Creating new DependencyMap");
