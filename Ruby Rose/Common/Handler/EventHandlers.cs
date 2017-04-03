@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace RubyRose.Common
+namespace RubyRose.Common.Handler
 {
     public class EventHandlers
     {
@@ -25,12 +25,13 @@ namespace RubyRose.Common
             _mongo = map.Get<MongoClient>();
         }
 
-        public void Install()
+        public Task Install()
         {
             _client.Log += LogEvents;
             _client.Ready += Ready;
             _client.MessageReceived += RwbyFight.MessageHandler;
             _client.GuildAvailable += GuildAvailable;
+            return Task.CompletedTask;
         }
 
         private async Task Ready()

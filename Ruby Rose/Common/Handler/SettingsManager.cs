@@ -2,13 +2,10 @@
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace RubyRose.Common
+namespace RubyRose.Common.Handler
 {
     public static class SettingsManager
     {
@@ -18,6 +15,11 @@ namespace RubyRose.Common
         public static ConcurrentDictionary<ulong, bool> CustomReactions = new ConcurrentDictionary<ulong, bool>();
         public static ConcurrentDictionary<ulong, bool> ResultAnnounce = new ConcurrentDictionary<ulong, bool>();
 
+        /// <summary>
+        /// Install the necessary requirements into the Settings Class.
+        /// This musct be called before Loading or Saving settings.
+        /// </summary>
+        /// <param name="map">The DependencyMap with DiscordClient and MongoClient.</param>
         public static Task Install(IDependencyMap map)
         {
             _client = map.Get<DiscordSocketClient>();

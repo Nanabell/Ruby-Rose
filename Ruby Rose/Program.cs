@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using MongoDB.Driver;
 using NLog;
 using RubyRose.Common;
+using RubyRose.Common.Handler;
 using System.Threading.Tasks;
 
 namespace RubyRose
@@ -43,7 +44,7 @@ namespace RubyRose
 
             logger.Debug("[EventHandler] Installing Event Handler");
             var events = new EventHandlers(map);
-            events.Install();
+            await events.Install();
 
             await SettingsManager.Install(map);
 
