@@ -16,7 +16,7 @@ namespace RubyRose.Common
         ulong GuildId { get; set; }
     }
 
-    public interface IOneIndexed
+    public interface INameIndexed
     {
         ObjectId _id { get; }
         ulong GuildId { get; set; }
@@ -60,7 +60,7 @@ namespace RubyRose.Common
                 i => i._id == entity._id);
         }
 
-        public static async Task<T> GetOneAsync<T>(this IMongoCollection<T> collection, IGuild guild, string name) where T : IOneIndexed
+        public static async Task<T> GetOneAsync<T>(this IMongoCollection<T> collection, IGuild guild, string name) where T : INameIndexed
         {
             logger.Trace($"[Database] Loading Documents for {collection.CollectionNamespace}");
             var TCursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);

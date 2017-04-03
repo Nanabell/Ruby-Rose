@@ -6,7 +6,7 @@ using MongoDB.Bson;
 
 namespace RubyRose.Database
 {
-    public class Joinables : IIndexed, IOneIndexed
+    public class Joinables : IIndexed, INameIndexed
     {
         public ObjectId _id { get; set; }
         public ulong GuildId { get; set; }
