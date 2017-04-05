@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using Discord;
 
 namespace RubyRose.Common.TypeReaders
 {
@@ -8,7 +9,21 @@ namespace RubyRose.Common.TypeReaders
     {
         public override Task<TypeReaderResult> Read(ICommandContext context, string input)
         {
-            return Task.FromResult(context.Message.Attachments.Any() ? TypeReaderResult.FromSuccess(context.Message.Attachments.First()) : TypeReaderResult.FromError(CommandError.ParseFailed, "Message contains no attachments."));
+            var attachments = context.Message.Attachments;
+
+            if (attachments.Count == 1)
+            {
+                var attachment = attachments.First();
+                return Task.FromResult(TypeReaderResult.FromSuccess(attachment));
+            }
+            else if (attachments.Count > 1)
+            {
+                return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, "Message contained to many Attachments"));
+            }
+            else
+            {
+                return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, "Message contains no attachments."));
+            }
         }
     }
 }

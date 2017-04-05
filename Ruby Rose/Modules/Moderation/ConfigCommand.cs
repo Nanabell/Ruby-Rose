@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Common;
+using RubyRose.Common.Handler;
 using RubyRose.Common.Preconditions;
 using RubyRose.Custom_Reactions;
 using RubyRose.Database;

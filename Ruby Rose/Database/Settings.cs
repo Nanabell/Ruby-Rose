@@ -1,9 +1,5 @@
-﻿using RubyRose.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson;
+using RubyRose.Common;
 
 namespace RubyRose.Database
 {
@@ -13,10 +9,8 @@ namespace RubyRose.Database
 
         public ulong GuildId { get; set; }
 
-        [BsonDefaultValue(true)]
         public bool ExecutionErrorAnnounce { get; set; }
 
-        [BsonDefaultValue(true)]
         public bool CustomReactions { get; set; }
     }
 }

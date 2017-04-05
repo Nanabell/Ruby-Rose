@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using MongoDB.Driver;
 using NLog;
 using RubyRose.Common;
+using RubyRose.Common.Handler;
 using RubyRose.Common.TypeReaders;
 using RubyRose.Database;
 using System;
@@ -105,12 +106,8 @@ namespace RubyRose
             _commandService = new CommandService(new CommandServiceConfig()
             {
                 LogLevel = LogSeverity.Info,
-#if DEBUG
                 DefaultRunMode = RunMode.Sync,
                 ThrowOnError = true
-#elif RELEASE
-                DefaultRunMode = RunMode.Async
-#endif
             });
             logger.Trace("[CommandService] Adding TypeReaders to CommandService");
             _commandService.AddTypeReader<CommandInfo>(new CommandInfoTypeReader(_commandService));

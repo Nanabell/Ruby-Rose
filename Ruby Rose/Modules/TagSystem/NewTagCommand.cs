@@ -7,6 +7,7 @@ using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RubyRose.Modules.TagSystem
@@ -57,35 +58,40 @@ namespace RubyRose.Modules.TagSystem
 
         [Command("NewTag")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task NewTag(string name, IAttachment attachment)
+        public async Task NewTag(string name, IAttachment attachment = null)
         {
-            name = name.ToLower();
-
-            var allTags = _mongo.GetCollection<Tags>(Context.Client);
-            var tags = await GetTagsAsync(allTags, Context.Guild);
-
-            var newTag = new Tags
+            if (Context.Message.Attachments.Any())
             {
-                GuildId = Context.Guild.Id,
-                Name = name,
-                Content = attachment.Url,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = Context.User.Id,
-                LastUsed = DateTime.MinValue,
-                Uses = 0
-            };
+                name = name.ToLower();
 
-            if (!tags.Exists(x => x.Name == name))
-            {
-                await allTags.InsertOneAsync(newTag);
-                await ReplyAsync($"Tag `{name.ToFirstUpper()}` added to database!");
-                logger.Info($"New Tag {name} on {Context.Guild.Name}");
+                var allTags = _mongo.GetCollection<Tags>(Context.Client);
+                var tags = await GetTagsAsync(allTags, Context.Guild);
+
+                var newTag = new Tags
+                {
+                    GuildId = Context.Guild.Id,
+                    Name = name,
+                    Content = Context.Message.Attachments.First().Url,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = Context.User.Id,
+                    LastUsed = DateTime.MinValue,
+                    Uses = 0
+                };
+
+                if (!tags.Exists(x => x.Name == name))
+                {
+                    await allTags.InsertOneAsync(newTag);
+                    await ReplyAsync($"Tag `{name.ToFirstUpper()}` added to database!");
+                    logger.Info($"New Tag {name} on {Context.Guild.Name}");
+                }
+                else
+                {
+                    await ReplyAsync($"Tag {name.ToFirstUpper()} already existent");
+                    logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
+                }
             }
             else
-            {
-                await ReplyAsync($"Tag {name.ToFirstUpper()} already existent");
-                logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
-            }
+                await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("Message contains no Attachment"));
         }
 
         private async Task<List<Tags>> GetTagsAsync(IMongoCollection<Tags> collection, IGuild guild)

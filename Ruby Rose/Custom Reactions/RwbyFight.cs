@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using MongoDB.Driver;
 using NLog;
 using RubyRose.Common;
+using RubyRose.Common.Handler;
 using RubyRose.Database;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
