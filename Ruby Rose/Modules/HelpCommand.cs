@@ -45,7 +45,7 @@ namespace RubyRose.Modules
                 sb.AppendLine($"**{group.Key}**: {string.Join(" ", commands.Distinct())}");
             }
             sb.AppendLine(
-                $"\nYou can use `{_credentials.Prefix}Help <command>` for mroe information on that command.");
+                $"\nYou can use `{_credentials.Prefix}Help <command>` for more information on that command.");
 
             await ReplyAsync($"{sb}");
         }
