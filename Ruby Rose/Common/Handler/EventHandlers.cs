@@ -76,9 +76,9 @@ namespace RubyRose.Common.Handler
                 case LogSeverity.Info:
                     { logger.Info($"[{msg.Source}] {msg.Message}"); break; }
                 case LogSeverity.Warning:
-                    { logger.Warn($"[{msg.Source}] {msg.Message}"); break; }
+                    { logger.Warn(msg.Exception, $"[{msg.Source}] {msg.Message}"); break; }
                 case LogSeverity.Error:
-                    { logger.Error($"[{msg.Source}] {msg.Message}"); break; }
+                    { logger.Error(msg.Exception, $"[{msg.Source}] {msg.Message}"); break; }
             }
             return Task.CompletedTask;
         }
