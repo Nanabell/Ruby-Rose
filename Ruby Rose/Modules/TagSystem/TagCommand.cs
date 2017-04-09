@@ -46,7 +46,7 @@ namespace RubyRose.Modules.TagSystem
         {
             name = name.ToLower();
             var alltags = _mongo.GetCollection<Tags>(Context.Client);
-            var tag = await alltags.GetOneAsync(Context.Guild, name);
+            var tag = await alltags.GetByNameAsync(Context.Guild, name);
 
             if (tag != null)
             {
