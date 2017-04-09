@@ -6,7 +6,7 @@ using RubyRose.Database;
 using System.Linq;
 using MongoDB.Driver;
 
-namespace RubyRose.Common.Preconditions
+namespace RubyRose
 {
     public enum AccessLevel
     {

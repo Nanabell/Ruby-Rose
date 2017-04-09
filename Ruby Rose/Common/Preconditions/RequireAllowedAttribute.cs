@@ -6,7 +6,7 @@ using MongoDB.Driver;
 using System.Collections.Generic;
 using RubyRose.Database;
 
-namespace RubyRose.Common.Preconditions
+namespace RubyRose
 {
     public class RequireAllowedAttribute : PreconditionAttribute
     {

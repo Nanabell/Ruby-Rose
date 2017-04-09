@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using static RubyRose.Common.Utils;
 
-namespace RubyRose.Common.Preconditions
+namespace RubyRose
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class RatelimitAttribute : PreconditionAttribute
@@ -27,15 +27,19 @@ namespace RubyRose.Common.Preconditions
                 case Measure.Days:
                     _invokeLimitPeriod = TimeSpan.FromDays(period);
                     break;
+
                 case Measure.Hours:
                     _invokeLimitPeriod = TimeSpan.FromHours(period);
                     break;
+
                 case Measure.Minutes:
                     _invokeLimitPeriod = TimeSpan.FromMinutes(period);
                     break;
+
                 case Measure.Seconds:
                     _invokeLimitPeriod = TimeSpan.FromSeconds(period);
-                        break;
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(measure), measure, null);
             }
@@ -73,7 +77,6 @@ namespace RubyRose.Common.Preconditions
             _invokeTracker[context.User.Id] = timeout;
             return Task.FromResult(PreconditionResult.FromSuccess());
         }
-
 
         private class CommandTimeout
         {
