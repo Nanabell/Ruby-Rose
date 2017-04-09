@@ -15,12 +15,12 @@ namespace RubyRose.Modules
     {
         private readonly CommandService _service;
         private readonly IDependencyMap _map;
-        private readonly Credentials _credentials;
+        private readonly CoreConfig _config;
 
         public HelpCommand(CommandService service, IDependencyMap map)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
-            _credentials = map.Get<Credentials>();
+            _config = map.Get<CoreConfig>();
             _map = map;
         }
 
@@ -45,7 +45,7 @@ namespace RubyRose.Modules
                 sb.AppendLine($"**{group.Key}**: {string.Join(" ", commands.Distinct())}");
             }
             sb.AppendLine(
-                $"\nYou can use `{_credentials.Prefix}Help <command>` for more information on that command.");
+                $"\nYou can use `{_config.Prefix}Help <command>` for more information on that command.");
 
             await ReplyAsync($"{sb}");
         }
@@ -71,7 +71,7 @@ namespace RubyRose.Modules
                 {
                     sb.AppendLine("Usage");
                     sb.AppendLine(
-                        $"\t{_credentials.Prefix}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
+                        $"\t{_config.Prefix}{(command.Module.IsSubmodule ? $"{command.Module.Name} " : "")}{command.Name} " +
                         string.Join(" ", command.Parameters.Select(FormatParam)).Replace("`", ""));
                     sb.AppendLine("Summary");
                     sb.AppendLine($"\t{command.Summary ?? "No Summary"}");
