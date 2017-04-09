@@ -10,9 +10,9 @@ namespace RubyRose.Database
 
         public ulong GuildId { get; set; }
 
-        public bool ResultAnnounce { get; set; }
+        public bool ResultAnnounce { get; set; } = true;
 
-        public bool RwbyFight { get; set; }
+        public bool RwbyFight { get; set; } = true;
 
         public override string ToString()
         {

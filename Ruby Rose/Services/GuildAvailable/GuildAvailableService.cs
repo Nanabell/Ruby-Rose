@@ -39,12 +39,7 @@ namespace RubyRose.Services.GuildAvailable
             _logger.Debug($"Checking if Guild {guild.Name} is Existent in Database");
             if (!settings.Exists(s => s.GuildId == guild.Id))
             {
-                var newsettings = new Settings
-                {
-                    GuildId = guild.Id,
-                    RwbyFight = true,
-                    ResultAnnounce = true
-                };
+                var newsettings = new Settings { GuildId = guild.Id };
                 _logger.Debug($"Adding missing Guild {guild.Name} to Database");
                 await allSettings.InsertOneAsync(newsettings);
             }
