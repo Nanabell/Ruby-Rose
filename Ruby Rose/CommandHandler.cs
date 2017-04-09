@@ -93,7 +93,7 @@ namespace RubyRose
             var allSettings = await mongo.GetCollection<Settings>(client).Find("{}").ToListAsync();
 
             foreach (var settings in allSettings)
-                ResultAnnounce.TryAdd(settings.GuildId, settings.ResultAnnounce);
+                ResultAnnounce.AddOrUpdate(settings.GuildId, settings.ResultAnnounce, (key, oldvalue) => settings.ResultAnnounce);
         }
 
         private string GetCommandName(CommandInfo info, SocketUserMessage message, int argPos)

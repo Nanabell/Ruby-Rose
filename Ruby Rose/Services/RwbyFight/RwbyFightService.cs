@@ -38,7 +38,7 @@ namespace RubyRose.Services.RwbyFight
             var allSettings = await mongo.GetCollection<Settings>(Client).Find("{}").ToListAsync();
 
             foreach (var settings in allSettings)
-                IsRwbyFight.TryAdd(settings.GuildId, settings.RwbyFight);
+                IsRwbyFight.AddOrUpdate(settings.GuildId, settings.RwbyFight, (key, oldvalue) => settings.RwbyFight);
         }
 
         private async Task Client_MessageReceived(SocketMessage arg)
