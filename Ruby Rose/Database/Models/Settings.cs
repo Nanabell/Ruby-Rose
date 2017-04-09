@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using RubyRose.Common;
+using System.Text;
 
 namespace RubyRose.Database
 {
@@ -12,5 +13,16 @@ namespace RubyRose.Database
         public bool ResultAnnounce { get; set; }
 
         public bool RwbyFight { get; set; }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("```");
+            sb.AppendLine($"GuildId:         {GuildId}");
+            sb.AppendLine($"Result Announce: {ResultAnnounce}");
+            sb.AppendLine($"Rwby Fight:      {RwbyFight}");
+            sb.AppendLine("````");
+            return sb.ToString();
+        }
     }
 }
