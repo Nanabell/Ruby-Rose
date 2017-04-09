@@ -27,10 +27,11 @@ namespace RubyRose.Modules.Owner
 
                 var build = await BuildCommand.dotnetBuild(config, verbosity);
                 await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Success("***Updating...***", build)));
+                await Task.Delay(500);
 
                 await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Success("***Updating...***", "***RESTARTING***")));
                 await Task.Delay(200);
-                Environment.Exit(1);
+                RestartCommand.Restart();
             }
             else await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Invalid("Already up-to-date")));
         }

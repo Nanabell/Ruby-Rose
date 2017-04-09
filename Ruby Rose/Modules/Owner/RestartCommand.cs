@@ -12,12 +12,31 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class RestartCommand : ModuleBase
     {
+        public static void Restart()
+        {
+            var proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = $"run",
+                    WorkingDirectory = Directory.GetCurrentDirectory(),
+                    UseShellExecute = false,
+                }
+            };
+
+            if (proc.Start())
+            {
+                Environment.Exit(1);
+            }
+        }
+
         [Command("Restart")]
         [RequireOwner]
-        public async Task Restart()
+        public async Task RestartCmd()
         {
             await ReplyAsync("*Restarting...*");
-            Environment.Exit(1);
+            Restart();
         }
     }
 }
