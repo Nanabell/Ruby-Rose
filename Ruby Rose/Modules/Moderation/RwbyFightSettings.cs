@@ -12,7 +12,7 @@ namespace RubyRose.Modules.Moderation
     [Name("Config")]
     public class RwbyFightSettings : ModuleBase
     {
-        [Name("Rwby Fight"), Group("Rwby Fight")]
+        [Name("RwbyFight"), Group("RwbyFight")]
         public class RwbyFightSettingsCommands : ModuleBase
         {
             private readonly MongoClient _mongo;

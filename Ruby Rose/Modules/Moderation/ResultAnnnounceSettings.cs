@@ -13,7 +13,7 @@ namespace RubyRose.Modules.Moderation
     [Name("Config")]
     public class ResultAnnnounceSettings : ModuleBase
     {
-        [Name("Result Announce"), Group("Result Announce")]
+        [Name("ResultAnnounce"), Group("ResultAnnounce")]
         public class ResultAnnounceSettingsCommands : ModuleBase
         {
             private readonly MongoClient _mongo;
