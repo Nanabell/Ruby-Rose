@@ -4,8 +4,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using NLog;
+using System;
 
-namespace RubyRose.Common
+namespace RubyRose
 {
     public static class Extentions
     {
@@ -41,6 +42,12 @@ namespace RubyRose.Common
             return ret;
         }
 
+        public static async Task ReplyAsync(this ICommandContext context, string message, bool mention = true)
+            => await context.Channel.SendMessageAsync($"{(mention ? context.User.Mention + ", " : "")}{message}");
+
+        public static async Task ReplyAsync(this ICommandContext context, Embed embed)
+            => await context.Channel.SendMessageAsync(String.Empty, embed: embed);
+
         public static async Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, EmbedBuilder builder)
             => await channel.SendMessageAsync("", false, builder);
 
@@ -53,7 +60,7 @@ namespace RubyRose.Common
             return char.ToUpper(str[0]) + str.Substring(1);
         }
 
-        public static string TimeDisplay(this Utils.DateTimeSpan time)
+        public static string TimeDisplay(this Common.Utils.DateTimeSpan time)
         {
             return
                 $"{(time.Years != 0 ? (time.Years == 1 ? $"{time.Years} Year " : $"{time.Years} Years ") : "")}" +
