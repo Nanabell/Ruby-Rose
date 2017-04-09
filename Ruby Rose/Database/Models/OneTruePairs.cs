@@ -6,12 +6,10 @@ using MongoDB.Bson;
 
 namespace RubyRose.Database
 {
-    public class Joinables : IIndexed, INameIndexed
+    public class OneTruePairs : IGuildOneIndexed
     {
         public ObjectId _id { get; set; }
         public ulong GuildId { get; set; }
-        public string Name { get; set; }
         public ulong RoleId { get; set; }
-        public int Level { get; set; }
     }
 }
