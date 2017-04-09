@@ -261,4 +261,4 @@ __pycache__/
 *.pyc
 
 # Custom
-credentials.json
+config.json
