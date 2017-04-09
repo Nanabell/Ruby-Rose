@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
+using RubyRose.Services.RwbyFight;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -33,7 +34,7 @@ namespace RubyRose.Modules.Moderation
                 {
                     settings.RwbyFight = true;
                     await allsettings.SaveAsync(settings);
-                    await CommandHandler.ReloadResultAnnounce(Context.Client as DiscordSocketClient, _mongo);
+                    await RwbyFightService.ReloadRwbyFight(Context.Client as DiscordSocketClient, _mongo);
                     await Context.ReplyAsync("Rwby Fight has been Enabled!");
                 }
                 else await Context.ReplyAsync("Rwby Fight is already Enabled");
@@ -50,7 +51,7 @@ namespace RubyRose.Modules.Moderation
                 {
                     settings.RwbyFight = false;
                     await allsettings.SaveAsync(settings);
-                    await CommandHandler.ReloadResultAnnounce(Context.Client as DiscordSocketClient, _mongo);
+                    await RwbyFightService.ReloadRwbyFight(Context.Client as DiscordSocketClient, _mongo);
                     await Context.ReplyAsync("Rwby Fight has been Disabled!");
                 }
                 else await Context.ReplyAsync("Rwby Fight is already Disabled");

@@ -16,7 +16,7 @@ namespace RubyRose.Services.RwbyFight
     {
         private Weiss WeissFirst = new Weiss();
         private Ruby RubyFirst = new Ruby();
-        private ConcurrentDictionary<ulong, bool> IsRwbyFight = new ConcurrentDictionary<ulong, bool>();
+        private static ConcurrentDictionary<ulong, bool> IsRwbyFight = new ConcurrentDictionary<ulong, bool>();
 
         protected override Task PreDisable()
         {
@@ -33,7 +33,7 @@ namespace RubyRose.Services.RwbyFight
         protected override bool WaitForReady()
             => true;
 
-        public async Task ReloadRwbyFight(DiscordSocketClient client, MongoClient mongo)
+        public static async Task ReloadRwbyFight(DiscordSocketClient client, MongoClient mongo)
         {
             var allSettings = await mongo.GetCollection<Settings>(Client).Find("{}").ToListAsync();
 
