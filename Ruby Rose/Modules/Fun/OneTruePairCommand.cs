@@ -31,7 +31,7 @@ namespace RubyRose.Modules.Fun
             var rnd = new Random();
             var selectionRole = Context.Guild.EveryoneRole;
 
-            var oneTruePair = _mongo.GetCollection<OneTruePairs>(Context.Client).GetListAsync(Context.Guild).Result.FirstOrDefault();
+            var oneTruePair = await _mongo.GetCollection<OneTruePairs>(Context.Client).GetByGuildAsync(Context.Guild);
 
             if (oneTruePair != null)
             {
