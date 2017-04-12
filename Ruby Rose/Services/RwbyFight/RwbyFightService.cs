@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System;
+using Discord;
 
 namespace RubyRose.Services.RwbyFight
 {
@@ -47,28 +48,31 @@ namespace RubyRose.Services.RwbyFight
             {
                 if (message.Author is SocketGuildUser user)
                 {
-                    if (IsRwbyFight.TryGetValue(user.Guild.Id, out var IsEnabled))
+                    if (message.Channel.CheckChannelPermission(ChannelPermission.AttachFiles, user.Guild.CurrentUser))
                     {
-                        if (IsEnabled)
+                        if (IsRwbyFight.TryGetValue(user.Guild.Id, out var IsEnabled))
                         {
-                            if (Regex.IsMatch(message.Content, "<:Heated2:\\d+>"))
+                            if (IsEnabled)
                             {
-                                if (WeissFirst.TryGet(message.Channel.Id))
-                                    await PostImage(message.Channel);
+                                if (Regex.IsMatch(message.Content, "<:Heated2:\\d+>"))
+                                {
+                                    if (WeissFirst.TryGet(message.Channel.Id))
+                                        await PostImage(message.Channel);
+                                    else
+                                        RubyFirst.TryAdd(message.Channel.Id);
+                                }
+                                else if (Regex.IsMatch(arg.Content, "<:Heated1:\\d+>"))
+                                {
+                                    if (RubyFirst.TryGet(message.Channel.Id))
+                                        await PostImage(message.Channel);
+                                    else
+                                        WeissFirst.TryAdd(message.Channel.Id);
+                                }
                                 else
-                                    RubyFirst.TryAdd(message.Channel.Id);
-                            }
-                            else if (Regex.IsMatch(arg.Content, "<:Heated1:\\d+>"))
-                            {
-                                if (RubyFirst.TryGet(message.Channel.Id))
-                                    await PostImage(message.Channel);
-                                else
-                                    WeissFirst.TryAdd(message.Channel.Id);
-                            }
-                            else
-                            {
-                                WeissFirst.TryRemove(message.Channel.Id);
-                                RubyFirst.TryRemove(message.Channel.Id);
+                                {
+                                    WeissFirst.TryRemove(message.Channel.Id);
+                                    RubyFirst.TryRemove(message.Channel.Id);
+                                }
                             }
                         }
                     }
