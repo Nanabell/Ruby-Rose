@@ -128,7 +128,7 @@ namespace RubyRose
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
 
             logger.Info("Starting CommandHandler");
-            _commandService.Log += Program.logging;
+            _commandService.Log += Program.Logging;
             _client.MessageReceived += HandleCommand;
         }
 

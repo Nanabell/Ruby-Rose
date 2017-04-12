@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using NLog;
-using RubyRose.Common;
 using RubyRose.Services;
 using System.Threading.Tasks;
 
@@ -11,13 +10,13 @@ namespace RubyRose
 {
     public class Program
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public static void Main(string[] args) => new Program().Start().GetAwaiter().GetResult();
 
         public async Task Start()
         {
-            logger.Info("\n" + @"
+            Logger.Info("\n" + @"
                                       bbbbbbbb
 RRRRRRRRRRRRRRRRR                     b::::::b                                          RRRRRRRRRRRRRRRRR
 R::::::::::::::::R                    b::::::b                                          R::::::::::::::::R
@@ -41,10 +40,10 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
                                                              y:::::y
                                                             yyyyyyy");
 
-            logger.Info("Loading configuration");
+            Logger.Info("Loading configuration");
             var config = CoreConfig.ReadConfig();
 
-            logger.Info("Initiating DiscordClient");
+            Logger.Info("Initiating DiscordClient");
             var client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,
@@ -52,9 +51,9 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
                 MessageCacheSize = 100
             });
 
-            client.Log += logging;
+            client.Log += Logging;
 
-            logger.Info("Connecting to MongoDb");
+            Logger.Info("Connecting to MongoDb");
             var mongo = new MongoClient(config.Database.Mongo);
 
             var map = new DependencyMap();
@@ -62,23 +61,23 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
             map.Add(mongo);
             map.Add(config);
 
-            logger.Info("Initializing Service Handler");
+            Logger.Info("Initializing Service Handler");
             new ServiceHandler(map);
 
-            logger.Info($"Starting Login to Discord");
+            Logger.Info($"Starting Login to Discord");
             await client.LoginAsync(TokenType.Bot, (config.IsMainBot ? config.Token.Main : config.Token.Dev));
 
-            logger.Info("Starting Bot");
+            Logger.Info("Starting Bot");
             await client.StartAsync();
 
-            logger.Info("Initializing Command Handler");
+            Logger.Info("Initializing Command Handler");
             var handler = new CommandHandler();
             await handler.Install(map);
 
             await Task.Delay(-1);
         }
 
-        public static Task logging(LogMessage arg)
+        public static Task Logging(LogMessage arg)
         {
             LogLevel level;
 
@@ -114,9 +113,9 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
             }
 
             if (arg.Exception == null)
-                logger.Log(level, arg.Message);
+                Logger.Log(level, arg.Message);
             else
-                logger.Log(level, arg.Exception, arg.Message);
+                Logger.Log(level, arg.Exception, arg.Message);
 
             return Task.CompletedTask;
         }
