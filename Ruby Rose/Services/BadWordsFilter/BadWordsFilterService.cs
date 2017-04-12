@@ -38,7 +38,7 @@ namespace RubyRose.Services
                         return;
                     if (!message.Channel.CheckChannelPermission(ChannelPermission.ManageMessages, user.Guild.CurrentUser))
                         return;
-                    if (user.GuildPermissions.BanMembers)
+                    if (user.Guild.OwnerId == user.Id)
                         return;
                     if (user.Id == application.Owner.Id)
                         return;
