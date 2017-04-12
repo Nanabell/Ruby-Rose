@@ -1,4 +1,5 @@
-﻿using Discord.Rest;
+﻿using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
@@ -31,26 +32,34 @@ namespace RubyRose.Services
             {
                 if (message.Author is SocketGuildUser user)
                 {
-                    if (user.Guild.CurrentUser.GuildPermissions.ManageMessages)
+                    var application = await Client.GetApplicationInfoAsync();
+
+                    if (user.IsBot)
+                        return;
+                    if (!message.Channel.CheckChannelPermission(ChannelPermission.ManageMessages, user.Guild.CurrentUser))
+                        return;
+                    if (user.GuildPermissions.BanMembers)
+                        return;
+                    if (user.Id == application.Owner.Id)
+                        return;
+
+                    if (BadWords.Count > 0)
                     {
-                        if (BadWords.Count > 0)
+                        try
                         {
-                            try
+                            foreach (var filter in BadWords)
                             {
-                                foreach (var filter in BadWords)
+                                if (Regex.IsMatch(message.Content, filter))
                                 {
-                                    if (Regex.IsMatch(message.Content, filter))
-                                    {
-                                        await message.DeleteAsync();
-                                        await SendBadWordMessage(user, message.Channel, filter);
-                                        _logger.Info($"Deleted Message with id {message.Id} due to Regex Match {filter}");
-                                    }
+                                    await message.DeleteAsync();
+                                    await SendBadWordMessage(user, message.Channel, filter);
+                                    _logger.Info($"Deleted Message with id {message.Id} due to Regex Match {filter}");
                                 }
                             }
-                            catch (Exception e)
-                            {
-                                _logger.Warn(e, $"Failed to Delete Bad Word Reason:");
-                            }
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.Warn(e, $"Failed to Delete Bad Word Reason:");
                         }
                     }
                 }
