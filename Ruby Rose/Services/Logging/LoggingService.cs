@@ -45,7 +45,7 @@ namespace RubyRose.Services.Logging
                 if (message.Author is SocketGuildUser user)
                 {
                     var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(Client);
-                    var messageLogging = await GetByMessageId(allMessageLoggings, user.Guild, message.Id);
+                    var messageLogging = await allMessageLoggings.GetByMessageIdAsyc(user.Guild, message.Id);
 
                     messageLogging.IsDeleted = true;
 
@@ -61,7 +61,7 @@ namespace RubyRose.Services.Logging
                 if (message.Author is SocketGuildUser user)
                 {
                     var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(Client);
-                    var messageLogging = await GetByMessageId(allMessageLoggings, user.Guild, message.Id);
+                    var messageLogging = await allMessageLoggings.GetByMessageIdAsyc(user.Guild, message.Id);
 
                     messageLogging.IsEdited = true;
                     messageLogging.Edits.Add(message.Content);
@@ -96,13 +96,6 @@ namespace RubyRose.Services.Logging
                     await allMessageLoggings.InsertOneAsync(newMessage);
                 }
             }
-        }
-
-        private async Task<MessageLoggings> GetByMessageId(IMongoCollection<MessageLoggings> collection, IGuild guild, ulong messageId)
-        {
-            var cursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.MessageId == messageId);
-            _logger.Debug($"Returning first document where message={messageId} & GuildId={guild.Id} in collection {collection.CollectionNamespace}");
-            return await cursor.FirstOrDefaultAsync();
         }
 
         protected override bool WaitForReady()
