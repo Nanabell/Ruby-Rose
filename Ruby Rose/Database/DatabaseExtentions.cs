@@ -80,5 +80,12 @@ namespace RubyRose.Database
             _logger.Debug($"Returning first document where name={name} in collection {collection.CollectionNamespace}");
             return await cursor.FirstOrDefaultAsync();
         }
+
+        public static async Task<T> GetByMessageIdAsyc<T>(this IMongoCollection<T> collection, IGuild guild, ulong messageId) where T : IGuildIdIndexed
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.MessageId == messageId);
+            _logger.Debug($"Returning first document where messageId={messageId} in collection {collection.CollectionNamespace}");
+            return await cursor.FirstOrDefaultAsync();
+        }
     }
 }

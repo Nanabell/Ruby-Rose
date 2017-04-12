@@ -5,7 +5,7 @@ using MongoDB.Bson;
 
 namespace RubyRose.Database.Models
 {
-    internal class MessageLoggings : IGuildIndexed
+    internal class MessageLoggings : IGuildIdIndexed
     {
         public ObjectId _id { get; set; }
         public ulong GuildId { get; set; }
