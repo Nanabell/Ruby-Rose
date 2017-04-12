@@ -65,6 +65,11 @@ namespace RubyRose.Services.RwbyFight
                                 else
                                     WeissFirst.TryAdd(message.Channel.Id);
                             }
+                            else
+                            {
+                                WeissFirst.TryRemove(message.Channel.Id);
+                                RubyFirst.TryRemove(message.Channel.Id);
+                            }
                         }
                     }
                 }
