@@ -27,6 +27,19 @@ namespace RubyRose
                 : 0;
         }
 
+        public static bool CheckChannelPermission(this IMessageChannel channel, ChannelPermission permission, IGuildUser guildUser)
+        {
+            var guildchannel = channel as IGuildChannel;
+
+            ChannelPermissions perms;
+            if (guildchannel != null)
+                perms = guildUser.GetPermissions(guildchannel);
+            else
+                perms = ChannelPermissions.All(guildchannel);
+
+            return perms.Has(permission);
+        }
+
         public static async Task<IEnumerable<CommandInfo>> CheckConditionsAsync(this IEnumerable<CommandInfo> commandInfos,
             ICommandContext context, IDependencyMap map = null)
         {
