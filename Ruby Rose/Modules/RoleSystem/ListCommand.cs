@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.RoleSystem
 {
@@ -17,8 +18,7 @@ namespace RubyRose.Modules.RoleSystem
 
         public ListCommand(IDependencyMap map)
         {
-            if (map == null) throw new ArgumentNullException(nameof(map));
-            _mongo = map.Get<MongoClient>();
+            _mongo = map?.Get<MongoClient>();
         }
 
         [Command("List")]

@@ -64,7 +64,7 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
             Logger.Info("Initializing Service Handler");
             new ServiceHandler(map);
 
-            Logger.Info($"Starting Login to Discord");
+            Logger.Info("Starting Login to Discord");
             await client.LoginAsync(TokenType.Bot, (config.IsMainBot ? config.Token.Main : config.Token.Dev));
 
             Logger.Info("Starting Bot");

@@ -25,7 +25,7 @@ namespace RubyRose.Modules.Moderation
                     await Context.Guild.AddBanAsync(user, prunedays);
                     await Context.Channel.SendEmbedAsync(Embeds.Success("*Banned!*", $"{user} has been banned from the Guild!"));
                 }
-                else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition($"You cant ban someone who is above or equal to you in the role hierarchy"));
+                else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("You cant ban someone who is above or equal to you in the role hierarchy"));
             }
             else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("I cant ban somone who is higher or equal to me in the role hierarchy"));
         }

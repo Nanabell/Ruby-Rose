@@ -1,13 +1,13 @@
-﻿using MongoDB.Bson;
-using RubyRose.Common;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
+using MongoDB.Bson;
+using RubyRose.Database.Interfaces;
 
-namespace RubyRose.Database
+namespace RubyRose.Database.Models
 {
     public class Settings : IGuildOneIndexed
     {
-        public ObjectId _id { get; set; }
+        public ObjectId Id { get; set; }
 
         public ulong GuildId { get; set; }
 

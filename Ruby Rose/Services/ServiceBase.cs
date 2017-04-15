@@ -1,9 +1,6 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using NLog;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RubyRose.Services
@@ -12,7 +9,7 @@ namespace RubyRose.Services
     {
         public static DiscordSocketClient Client;
         public static IDependencyMap Map;
-        internal static Logger _logger = LogManager.GetCurrentClassLogger();
+        internal static Logger Logger = LogManager.GetCurrentClassLogger();
         public bool IsEnabled { get; internal set; }
 
         protected abstract Task PreEnable();
@@ -25,8 +22,7 @@ namespace RubyRose.Services
         {
             if (WaitForReady())
                 return false;
-            else
-                return await TryEnable();
+            return await TryEnable();
         }
 
         public async Task<bool> TryEnable()
@@ -36,7 +32,7 @@ namespace RubyRose.Services
 
             await PreEnable();
             IsEnabled = true;
-            _logger.Info($"Enabled Service {GetType().Name}");
+            Logger.Info($"Enabled Service {GetType().Name}");
             return true;
         }
 
@@ -47,7 +43,7 @@ namespace RubyRose.Services
 
             await PreDisable();
             IsEnabled = false;
-            _logger.Info($"Disabled Service {GetType().Name}");
+            Logger.Info($"Disabled Service {GetType().Name}");
             return true;
         }
     }

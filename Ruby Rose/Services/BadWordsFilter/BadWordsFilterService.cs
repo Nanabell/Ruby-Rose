@@ -1,18 +1,20 @@
-﻿using Discord;
-using Discord.Rest;
-using Discord.WebSocket;
-using MongoDB.Driver;
-using RubyRose.Database;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
+using MongoDB.Driver;
+using RubyRose.Common;
+using RubyRose.Database;
+using RubyRose.Database.Models;
 
-namespace RubyRose.Services
+namespace RubyRose.Services.BadWordsFilter
 {
     public class BadWordsFilterService : ServiceBase
     {
-        private static List<string> BadWords = new List<string>();
+        private static List<string> _badWords = new List<string>();
 
         protected override Task PreDisable()
         {
@@ -43,32 +45,31 @@ namespace RubyRose.Services
                     if (user.Id == application.Owner.Id)
                         return;
 
-                    if (BadWords.Count > 0)
+                    if (_badWords.Count > 0)
                     {
                         try
                         {
-                            foreach (var filter in BadWords)
+                            foreach (var filter in _badWords)
                             {
-                                if (Regex.IsMatch(message.Content, filter))
-                                {
-                                    await message.DeleteAsync();
-                                    await SendBadWordMessage(user, message.Channel, filter);
-                                    _logger.Info($"Deleted Message with id {message.Id} due to Regex Match {filter}");
-                                }
+                                if (!Regex.IsMatch(message.Content, filter, RegexOptions.None,
+                                    TimeSpan.FromSeconds(2))) continue;
+                                await message.DeleteAsync();
+                                await SendBadWordMessage(user, message.Channel);
+                                Logger.Info($"Deleted Message with id {message.Id}");
                             }
                         }
                         catch (Exception e)
                         {
-                            _logger.Warn(e, $"Failed to Delete Bad Word Reason:");
+                            Logger.Warn(e, "Failed to Delete Bad Word Reason:");
                         }
                     }
                 }
             }
         }
 
-        private async Task<RestUserMessage> SendBadWordMessage(SocketUser user, ISocketMessageChannel channel, string regex)
+        private static async Task<RestUserMessage> SendBadWordMessage(IMentionable user, ISocketMessageChannel channel)
         {
-            return await channel.SendMessageAsync($"{user.Mention}, This word / phrase is marked as BadWord with the Regex `{regex}`");
+            return await channel.SendMessageAsync($"{user.Mention}, This Word / Phrase is marked as a bad Word!");
         }
 
         protected override bool WaitForReady()
@@ -79,7 +80,7 @@ namespace RubyRose.Services
             var allSettings = await mongo.GetCollection<Settings>(Client).Find("{}").ToListAsync();
 
             foreach (var settings in allSettings)
-                BadWords = settings.BadWords;
+                _badWords = settings.BadWords;
         }
     }
 }

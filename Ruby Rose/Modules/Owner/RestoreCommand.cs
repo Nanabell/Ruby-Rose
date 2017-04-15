@@ -1,11 +1,8 @@
 ﻿using Discord.Commands;
 using NLog;
-using RubyRose.Common;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -14,9 +11,9 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class RestoreCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        public static async Task<string> dotnetRestore(string verbosity)
+        public static async Task<string> DotnetRestore(string verbosity)
         {
             var proc = new Process
             {
@@ -30,35 +27,25 @@ namespace RubyRose.Modules.Owner
                 }
             };
 
-            if (proc.Start())
+            if (!proc.Start()) return "Failed to start restore process.";
+            var report = await proc.StandardOutput.ReadToEndAsync();
+            var error = await proc.StandardError.ReadToEndAsync();
+            if (error != null)
             {
-                var report = await proc.StandardOutput.ReadToEndAsync();
-                var error = await proc.StandardError.ReadToEndAsync();
-                if (error != null)
-                {
-                    logger.Error(error);
-                }
-
-                if (Regex.IsMatch(report, @"Restore completed in \d.+? sec"))
-                {
-                    string rTime = Regex.Match(report, @"Restore completed in (\d.+?) sec").Groups[1].Value;
-
-                    if (Regex.IsMatch(report, @"Lock file has not changed. Skipping lock file write."))
-                    {
-                        return $"Lock file has not changed. Skipping lock file write.\nRestore completed in {rTime} sec";
-                    }
-                    else return report;
-                }
-                else return report;
+                Logger.Error(error);
             }
-            else return "Failed to start restore process.";
+
+            if (!Regex.IsMatch(report, @"Restore completed in \d.+? sec")) return report;
+            var rTime = Regex.Match(report, @"Restore completed in (\d.+?) sec").Groups[1].Value;
+
+            return Regex.IsMatch(report, @"Lock file has not changed. Skipping lock file write.") ? $"Lock file has not changed. Skipping lock file write.\nRestore completed in {rTime} sec" : report;
         }
 
         [Command("Restore")]
         [RequireOwner]
         public async Task Restore(string verbosity = "m")
         {
-            var report = await dotnetRestore(verbosity);
+            var report = await DotnetRestore(verbosity);
             Console.WriteLine(report);
         }
     }

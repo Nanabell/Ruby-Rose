@@ -11,7 +11,7 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class PullCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public static async Task<string> GitPull(string branch)
         {
@@ -31,23 +31,11 @@ namespace RubyRose.Modules.Owner
                 var error = await proc.StandardError.ReadToEndAsync();
                 var report = await proc.StandardOutput.ReadToEndAsync();
 
-                if (error != null)
-                {
-                    if (Regex.IsMatch(error, "Couldn't find remote ref"))
-                    {
-                        logger.Warn(error);
-                        return error.Substring(7);
-                    }
-                }
-
-                if (Regex.IsMatch(report, "Already up-to-date"))
-                {
-                    return "Already up-to-date.";
-                }
-                else
-                {
-                    return report;
-                }
+                if (error == null) return Regex.IsMatch(report, "Already up-to-date") ? "Already up-to-date." : report;
+                if (!Regex.IsMatch(error, "Couldn't find remote ref"))
+                    return Regex.IsMatch(report, "Already up-to-date") ? "Already up-to-date." : report;
+                Logger.Warn(error);
+                return error.Substring(7);
             }
             else return "Failed to start git pull process.";
         }

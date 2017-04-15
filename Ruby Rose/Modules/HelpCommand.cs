@@ -1,7 +1,6 @@
 ﻿using Discord.Commands;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
-using RubyRose.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;

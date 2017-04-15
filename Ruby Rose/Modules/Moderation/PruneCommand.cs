@@ -20,8 +20,7 @@ namespace RubyRose.Modules.Moderation
         {
             var internalCount = count;
             var deletedmsgs = 0;
-            // ReSharper disable once SuggestVarOrType_BuiltInTypes
-            int runs = count / 100;
+            var runs = count / 100;
             if (runs == 0) runs = 1;
             IMessage lastmsg = null;
             do
@@ -42,7 +41,7 @@ namespace RubyRose.Modules.Moderation
 
                 if (user != null)
                 {
-                    deletedmsgs += msgs.Where(x => x.Author.Id == user.Id).Count();
+                    deletedmsgs += msgs.Count(x => x.Author.Id == user.Id);
                     await Context.Channel.DeleteMessagesAsync(msgs.Where(x => x.Author.Id == user.Id));
                 }
                 else

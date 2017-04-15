@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using MongoDB.Bson;
+using RubyRose.Database.Interfaces;
 
 namespace RubyRose.Database.Models
 {
     internal class MessageLoggings : IGuildIdIndexed
     {
-        public ObjectId _id { get; set; }
+        public ObjectId Id { get; set; }
         public ulong GuildId { get; set; }
         public ulong ChannelId { get; set; }
         public ulong UserId { get; set; }

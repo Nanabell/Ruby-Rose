@@ -9,13 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.TagSystem
 {
     [Name("Tag System"), Group]
     public class NewTagCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public NewTagCommand(IDependencyMap map)
@@ -47,12 +48,12 @@ namespace RubyRose.Modules.TagSystem
             {
                 await allTags.InsertOneAsync(newTag);
                 await ReplyAsync($"Tag `{name.ToFirstUpper()}` added to database!");
-                logger.Info($"New Tag {name} on {Context.Guild.Name}");
+                Logger.Info($"New Tag {name} on {Context.Guild.Name}");
             }
             else
             {
                 await ReplyAsync($"Tag {name.ToFirstUpper()} already existent");
-                logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
+                Logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
             }
         }
 
@@ -82,12 +83,12 @@ namespace RubyRose.Modules.TagSystem
                 {
                     await allTags.InsertOneAsync(newTag);
                     await ReplyAsync($"Tag `{name.ToFirstUpper()}` added to database!");
-                    logger.Info($"New Tag {name} on {Context.Guild.Name}");
+                    Logger.Info($"New Tag {name} on {Context.Guild.Name}");
                 }
                 else
                 {
                     await ReplyAsync($"Tag {name.ToFirstUpper()} already existent");
-                    logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
+                    Logger.Warn($"Failed to add new Tag {name} to {Context.Guild.Name}, already Existent");
                 }
             }
             else
@@ -96,8 +97,8 @@ namespace RubyRose.Modules.TagSystem
 
         private async Task<List<Tags>> GetTagsAsync(IMongoCollection<Tags> collection, IGuild guild)
         {
-            var TagsCursor = await collection.FindAsync(f => f.GuildId == guild.Id);
-            return await TagsCursor.ToListAsync();
+            var tagsCursor = await collection.FindAsync(f => f.GuildId == guild.Id);
+            return await tagsCursor.ToListAsync();
         }
     }
 }

@@ -1,8 +1,5 @@
 ﻿using Discord.Commands;
 using RubyRose.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Owner
@@ -22,10 +19,10 @@ namespace RubyRose.Modules.Owner
             {
                 await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Success("***Updating...***", pull)));
 
-                var restore = await RestoreCommand.dotnetRestore(verbosity);
+                var restore = await RestoreCommand.DotnetRestore(verbosity);
                 await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Success("***Updating...***", restore)));
 
-                var build = await BuildCommand.dotnetBuild(config, verbosity);
+                var build = await BuildCommand.DotnetBuild(config, verbosity);
                 await msg.ModifyAsync(modi => modi.Embed = new Discord.Optional<Discord.Embed>(Embeds.Success("***Updating...***", build)));
                 await Task.Delay(500);
 

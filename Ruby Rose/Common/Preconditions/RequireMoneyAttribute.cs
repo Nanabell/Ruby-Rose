@@ -1,10 +1,8 @@
 ﻿using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Database;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Common.Preconditions
 {
@@ -39,20 +37,18 @@ namespace RubyRose.Common.Preconditions
         /// Return the Currency of the current User
         /// </summary>
         /// <returns>Currency as int</returns>
-        private int GetUserMoney(ICommandContext context, MongoClient mongo)
+        private static int GetUserMoney(ICommandContext context, MongoClient mongo)
         {
             var allUsers = mongo.GetCollection<Users>(context.Client);
             var user = allUsers.Find(g => g.GuildId == context.Guild.Id && g.UserId == context.User.Id).FirstOrDefault();
 
-            if (user != null)
-                return user.Money;
-            else return 0;
+            return user?.Money ?? 0;
         }
 
         /// <summary>
         /// Save the new Currency count to the Database.
         /// </summary>
-        private async Task SetUserMoneyAsync(ICommandContext context, MongoClient mongo, int newMoney)
+        private static async Task SetUserMoneyAsync(ICommandContext context, MongoClient mongo, int newMoney)
         {
             var allUsers = mongo.GetCollection<Users>(context.Client);
             var user = allUsers.Find(g => g.GuildId == context.Guild.Id && g.UserId == context.User.Id).FirstOrDefault();

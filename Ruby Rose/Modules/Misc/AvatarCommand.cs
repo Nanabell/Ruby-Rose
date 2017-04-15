@@ -27,7 +27,7 @@ namespace RubyRose.Modules.Misc
             embed.WithAuthor((author) =>
             {
                 author.Name = $"{user}";
-                author.IconUrl = user.GetAvatarUrl(ImageFormat.Auto);
+                author.IconUrl = user.GetAvatarUrl();
                 author.Url = user.GetAvatarUrl(ImageFormat.Auto, 1024);
             });
 

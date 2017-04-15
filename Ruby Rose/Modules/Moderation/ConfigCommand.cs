@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using RubyRose.Common;
+using RubyRose.Common.Preconditions;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.Moderation
 {

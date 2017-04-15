@@ -6,24 +6,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using MongoDB.Driver;
-using RubyRose.Database;
-using RubyRose.Common;
-using NLog;
 
 namespace RubyRose.Modules.Owner
 {
     [Name("Owner"), Group]
     public class OwnerModule : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
-        private readonly MongoClient _mongo;
-
-        public OwnerModule(IDependencyMap map)
-        {
-            _mongo = map.Get<MongoClient>();
-        }
-
         [Command("BotInfo")]
         [RequireOwner]
         public async Task Info()

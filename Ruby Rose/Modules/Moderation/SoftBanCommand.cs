@@ -26,7 +26,7 @@ namespace RubyRose.Modules.Moderation
                     await Context.Guild.RemoveBanAsync(user);
                     await Context.Channel.SendEmbedAsync(Embeds.Success("*Softbanned!*", $"{user} has been softbanned from the Guild!"));
                 }
-                else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition($"You cant softban someone who is above or equal to you in the role hierarchy"));
+                else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("You cant softban someone who is above or equal to you in the role hierarchy"));
             }
             else await Context.Channel.SendEmbedAsync(Embeds.UnmetPrecondition("I cant softban somone who is higher or equal to me in the role hierarchy"));
         }

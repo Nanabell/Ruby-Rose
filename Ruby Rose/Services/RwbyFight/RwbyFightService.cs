@@ -1,6 +1,5 @@
 ﻿using Discord.WebSocket;
 using MongoDB.Driver;
-using NLog;
 using RubyRose.Database;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,16 +7,17 @@ using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System;
 using Discord;
+using RubyRose.Common;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Services.RwbyFight
 {
     public class RwbyFightService : ServiceBase
     {
-        private Weiss WeissFirst = new Weiss();
-        private Ruby RubyFirst = new Ruby();
-        private static ConcurrentDictionary<ulong, bool> IsRwbyFight = new ConcurrentDictionary<ulong, bool>();
+        private readonly Weiss _weissFirst = new Weiss();
+        private readonly Ruby _rubyFirst = new Ruby();
+        private static readonly ConcurrentDictionary<ulong, bool> IsRwbyFight = new ConcurrentDictionary<ulong, bool>();
 
         protected override Task PreDisable()
         {
@@ -50,28 +50,28 @@ namespace RubyRose.Services.RwbyFight
                 {
                     if (message.Channel.CheckChannelPermission(ChannelPermission.AttachFiles, user.Guild.CurrentUser))
                     {
-                        if (IsRwbyFight.TryGetValue(user.Guild.Id, out var IsEnabled))
+                        if (IsRwbyFight.TryGetValue(user.Guild.Id, out var isEnabled))
                         {
-                            if (IsEnabled)
+                            if (isEnabled)
                             {
                                 if (Regex.IsMatch(message.Content, "<:Heated2:\\d+>"))
                                 {
-                                    if (WeissFirst.TryGet(message.Channel.Id))
+                                    if (_weissFirst.TryGet(message.Channel.Id))
                                         await PostImage(message.Channel);
                                     else
-                                        RubyFirst.TryAdd(message.Channel.Id);
+                                        _rubyFirst.TryAdd(message.Channel.Id);
                                 }
                                 else if (Regex.IsMatch(arg.Content, "<:Heated1:\\d+>"))
                                 {
-                                    if (RubyFirst.TryGet(message.Channel.Id))
+                                    if (_rubyFirst.TryGet(message.Channel.Id))
                                         await PostImage(message.Channel);
                                     else
-                                        WeissFirst.TryAdd(message.Channel.Id);
+                                        _weissFirst.TryAdd(message.Channel.Id);
                                 }
                                 else
                                 {
-                                    WeissFirst.TryRemove(message.Channel.Id);
-                                    RubyFirst.TryRemove(message.Channel.Id);
+                                    _weissFirst.TryRemove(message.Channel.Id);
+                                    _rubyFirst.TryRemove(message.Channel.Id);
                                 }
                             }
                         }
@@ -88,10 +88,10 @@ namespace RubyRose.Services.RwbyFight
                 direc = direc.Parent;
             }
             while (direc.Name != "Ruby Rose");
-            _logger.Info("Triggered Rwby Fight Gif");
+            Logger.Info("Triggered Rwby Fight Gif");
             await channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
-            WeissFirst.TryRemove(channel.Id);
-            RubyFirst.TryRemove(channel.Id);
+            _weissFirst.TryRemove(channel.Id);
+            _rubyFirst.TryRemove(channel.Id);
         }
     }
 
@@ -100,7 +100,7 @@ namespace RubyRose.Services.RwbyFight
         internal List<ulong> RubyFirst = new List<ulong>();
 
         public bool TryGet(ulong channel)
-         => RubyFirst.Contains(channel) ? true : false;
+         => RubyFirst.Contains(channel);
 
         public bool TryAdd(ulong channel)
         {
@@ -128,7 +128,7 @@ namespace RubyRose.Services.RwbyFight
         internal List<ulong> WeissFirst = new List<ulong>();
 
         public bool TryGet(ulong channel)
-         => WeissFirst.Contains(channel) ? true : false;
+         => WeissFirst.Contains(channel);
 
         public bool TryAdd(ulong channel)
         {

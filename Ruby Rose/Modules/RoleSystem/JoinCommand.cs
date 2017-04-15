@@ -11,13 +11,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.RoleSystem
 {
     [Name("Role System"), Group]
     public class JoinCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public JoinCommand(IDependencyMap map)
@@ -53,7 +54,7 @@ namespace RubyRose.Modules.RoleSystem
                             sb.AppendLine(joinable.Name.ToFirstUpper());
                         }
                         else sb.AppendLine($"{joinable.Name.ToFirstUpper()} --already joined");
-                    };
+                    }
                     break;
                 }
                 var result = joinables.FirstOrDefault(f => f.Name == word);
@@ -67,11 +68,9 @@ namespace RubyRose.Modules.RoleSystem
                         var userRoles = (Context.User as SocketGuildUser).Roles;
                         foreach (var role in rolelist)
                         {
-                            if (userRoles.Any(x => x.Id == role.RoleId))
-                            {
-                                sb.AppendLine($"{result.Name.ToFirstUpper()} --cant join, user has already a role of level {result.Level}");
-                                skip = true;
-                            }
+                            if (userRoles.All(x => x.Id != role.RoleId)) continue;
+                            sb.AppendLine($"{result.Name.ToFirstUpper()} --cant join, user has already a role of level {result.Level}");
+                            skip = true;
                         }
                         if (skip)
                             continue;
@@ -79,7 +78,7 @@ namespace RubyRose.Modules.RoleSystem
                 }
                 catch (Exception e)
                 {
-                    logger.Warn($"Role Level Compare Faild:\n{e}");
+                    Logger.Warn($"Role Level Compare Faild:\n{e}");
                 }
 
                 if ((Context.User as IGuildUser).RoleIds.Contains(result.RoleId))
@@ -98,7 +97,7 @@ namespace RubyRose.Modules.RoleSystem
             }
             else
             {
-                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
+                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb));
             }
         }
     }

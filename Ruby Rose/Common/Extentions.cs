@@ -1,16 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using NLog;
-using System;
 
-namespace RubyRose
+namespace RubyRose.Common
 {
     public static class Extentions
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public static string LimitLengh(this string str, int maxLengh) => str.Length <= maxLengh
             ? str
@@ -32,10 +32,7 @@ namespace RubyRose
             var guildchannel = channel as IGuildChannel;
 
             ChannelPermissions perms;
-            if (guildchannel != null)
-                perms = guildUser.GetPermissions(guildchannel);
-            else
-                perms = ChannelPermissions.All(guildchannel);
+            perms = guildchannel != null ? guildUser.GetPermissions(guildchannel) : ChannelPermissions.All(null);
 
             return perms.Has(permission);
         }
@@ -46,11 +43,9 @@ namespace RubyRose
             var ret = new List<CommandInfo>();
             foreach (var commandInfo in commandInfos)
             {
-                if ((await commandInfo.CheckPreconditionsAsync(context, map)).IsSuccess)
-                {
-                    logger.Trace($"[Precondition] Command {commandInfo.Name} passed all Checks");
-                    ret.Add(commandInfo);
-                }
+                if (!(await commandInfo.CheckPreconditionsAsync(context, map)).IsSuccess) continue;
+                Logger.Trace($"[Precondition] Command {commandInfo.Name} passed all Checks");
+                ret.Add(commandInfo);
             }
             return ret;
         }
@@ -59,7 +54,7 @@ namespace RubyRose
             => await context.Channel.SendMessageAsync($"{(mention ? context.User.Mention + ", " : "")}{message}");
 
         public static async Task ReplyAsync(this ICommandContext context, Embed embed)
-            => await context.Channel.SendMessageAsync(String.Empty, embed: embed);
+            => await context.Channel.SendMessageAsync(string.Empty, embed: embed);
 
         public static async Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, EmbedBuilder builder)
             => await channel.SendMessageAsync("", false, builder);
@@ -73,7 +68,7 @@ namespace RubyRose
             return char.ToUpper(str[0]) + str.Substring(1);
         }
 
-        public static string TimeDisplay(this Common.Utils.DateTimeSpan time)
+        public static string TimeDisplay(this Utils.DateTimeSpan time)
         {
             return
                 $"{(time.Years != 0 ? (time.Years == 1 ? $"{time.Years} Year " : $"{time.Years} Years ") : "")}" +

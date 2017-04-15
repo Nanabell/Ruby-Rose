@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netcoreapp1.0</TargetFramework>
     <DebugType>portable</DebugType>
@@ -17,15 +16,12 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <RootNamespace>RubyRose</RootNamespace>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="Data\weiss-shrug.png" />
   </ItemGroup>
-
   <ItemGroup>
     <EmbeddedResource Include="Data\weiss-shrug.png" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Discord.Addons.EmojiTools" Version="1.1.0-ci-00017" />
     <PackageReference Include="Discord.Net.Commands" Version="1.0.0-rc2-00698" />
@@ -38,11 +34,9 @@
     <PackageReference Include="NLog" Version="5.0.0-beta06" />
     <PackageReference Include="NLog.Config" Version="4.5.0-alpha04" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="NLog.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>

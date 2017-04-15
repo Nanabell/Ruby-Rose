@@ -7,13 +7,14 @@ using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.RoleSystem.Management
 {
     [Name("Role System Management"), Group]
     public class AddJoinableCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public AddJoinableCommand(IDependencyMap map)
@@ -24,7 +25,7 @@ namespace RubyRose.Modules.RoleSystem.Management
         [Command("AddJoinable")]
         [Summary("Mark a Role as Joinable with a Keyword")]
         [MinPermission(AccessLevel.ServerModerator), RequireAllowed]
-        public async Task AddJoinable(string name, IRole role, int RoleLevel = 0)
+        public async Task AddJoinable(string name, IRole role, int roleLevel = 0)
         {
             name = name.ToLower();
             var allJoinables = _mongo.GetCollection<Joinables>(Context.Client);
@@ -35,19 +36,19 @@ namespace RubyRose.Modules.RoleSystem.Management
                 GuildId = Context.Guild.Id,
                 Name = name,
                 RoleId = role.Id,
-                Level = RoleLevel,
+                Level = roleLevel,
             };
 
             if (!joinables.Exists(x => x.Name == name))
             {
                 await allJoinables.InsertOneAsync(newjoin);
                 await ReplyAsync($"Joinable `{name.ToFirstUpper()}` added to Database");
-                logger.Info($"New Joinable {name} on {Context.Guild.Id}");
+                Logger.Info($"New Joinable {name} on {Context.Guild.Id}");
             }
             else
             {
                 await ReplyAsync($"Joinable {name.ToFirstUpper()} already existent");
-                logger.Warn($"Failed to add new Joinable {name} to {Context.Guild.Name}, already Existent");
+                Logger.Warn($"Failed to add new Joinable {name} to {Context.Guild.Name}, already Existent");
             }
         }
 

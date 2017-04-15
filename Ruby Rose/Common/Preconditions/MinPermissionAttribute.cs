@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
-using RubyRose.Database;
-using System.Linq;
 using MongoDB.Driver;
+using RubyRose.Database;
+using RubyRose.Database.Models;
 
-namespace RubyRose
+namespace RubyRose.Common.Preconditions
 {
     public enum AccessLevel
     {
@@ -14,6 +15,7 @@ namespace RubyRose
         IsPrivate,
         User,
         ServerModerator,
+        ServerAdmin,
         ServerOwner,
         Special,
         BotOwner
@@ -35,23 +37,28 @@ namespace RubyRose
             _mongo = map.Get<MongoClient>();
             var access = GetPermissionsAsync(_mongo, context, _level);
 
-            if (_level == AccessLevel.Special)
-            {
-                return Task.FromResult(access >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("This command needs special permissions!"));
-            }
-            return Task.FromResult(access >= _level ? PreconditionResult.FromSuccess() : PreconditionResult.FromError("Not enough permissions!"));
+            return _level == AccessLevel.Special
+                ? Task.FromResult(access >= _level
+                    ? PreconditionResult.FromSuccess()
+                    : PreconditionResult.FromError("This command needs special permissions!"))
+                : Task.FromResult(access >= _level
+                    ? PreconditionResult.FromSuccess()
+                    : PreconditionResult.FromError("Not enough permissions!"));
         }
 
         public AccessLevel GetPermissionsAsync(MongoClient mongo, ICommandContext context, AccessLevel requestedLvl)
         {
-            if (context.User.IsBot) return AccessLevel.Blocked;
+            if (context.User.IsBot)
+                return AccessLevel.Blocked;
 
             var application = context.Client.GetApplicationInfoAsync().GetAwaiter().GetResult();
 
-            if (application.Owner.Id == context.User.Id) return AccessLevel.BotOwner;
+            if (application.Owner.Id == context.User.Id)
+                return AccessLevel.BotOwner;
 
             var user = context.User as SocketGuildUser;
-            if (user == null) return AccessLevel.IsPrivate;
+            if (user == null)
+                return AccessLevel.IsPrivate;
 
             if (requestedLvl == AccessLevel.Special)
             {
@@ -65,9 +72,12 @@ namespace RubyRose
                 }
             }
 
-            if (context.Guild.OwnerId == user.Id) return AccessLevel.ServerOwner;
-            if (user.GuildPermissions.BanMembers || user.GuildPermissions.KickMembers) return AccessLevel.ServerModerator;
-            return AccessLevel.User;
+            if (context.Guild.OwnerId == user.Id)
+                return AccessLevel.ServerOwner;
+            if (user.GuildPermissions.BanMembers)
+                return AccessLevel.ServerAdmin;
+
+            return user.GuildPermissions.KickMembers ? AccessLevel.ServerModerator : AccessLevel.User;
         }
     }
 }

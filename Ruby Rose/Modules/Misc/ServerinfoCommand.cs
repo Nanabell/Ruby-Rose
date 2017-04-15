@@ -27,7 +27,7 @@ namespace RubyRose.Modules.Misc
             embed.WithColor(new Color(color));
             embed.WithThumbnailUrl(guild.IconUrl);
 
-            embed.AddField((field) =>
+            embed.AddField(field =>
             {
                 field.IsInline = false;
                 field.Name = guild.Name;

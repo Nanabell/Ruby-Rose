@@ -5,16 +5,15 @@ using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
-using System;
-using System.Linq;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.TagSystem
 {
     [Name("Tag System"), Group]
     public class DeleteTagCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public DeleteTagCommand(IDependencyMap map)
@@ -35,19 +34,19 @@ namespace RubyRose.Modules.TagSystem
             {
                 await allTags.DeleteAsync(tag);
                 await ReplyAsync($"Tag `{name.ToFirstUpper()}` dropped from Database");
-                logger.Info($"Deleted Tag {name} on {Context.Guild.Name}");
+                Logger.Info($"Deleted Tag {name} on {Context.Guild.Name}");
             }
             else
             {
                 await ReplyAsync($"Tag `{name.ToFirstUpper()}` not Existent");
-                logger.Warn($"Failed to delete Tag {name} on {Context.Guild.Name}, not Existent");
+                Logger.Warn($"Failed to delete Tag {name} on {Context.Guild.Name}, not Existent");
             }
         }
 
-        private async Task<Tags> GetTagAsync(IMongoCollection<Tags> collection, IGuild guild, string name)
+        private static async Task<Tags> GetTagAsync(IMongoCollection<Tags> collection, IGuild guild, string name)
         {
-            var TagsCursors = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
-            return await TagsCursors.FirstOrDefaultAsync();
+            var tagsCursors = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
+            return await tagsCursors.FirstOrDefaultAsync();
         }
     }
 }

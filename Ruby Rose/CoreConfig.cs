@@ -1,9 +1,6 @@
 ﻿using Newtonsoft.Json;
 using RubyRose.Database;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace RubyRose
 {
@@ -25,7 +22,7 @@ namespace RubyRose
         public Databases Database { get; set; } = new Databases();
 
         [JsonProperty("is-sharded")]
-        public bool IsSharded { get; set; } = false;
+        public bool IsSharded { get; set; }
 
         [JsonProperty("shard-count")]
         public int TotalShards { get; set; } = 1;
@@ -34,7 +31,7 @@ namespace RubyRose
         public ulong[] OwnerIds { get; set; } = new ulong[0];
 
         [JsonProperty("fallback-name")]
-        public string FallbackName { get; set; } = null;
+        public string FallbackName { get; set; }
 
         public static CoreConfig ReadConfig()
         {

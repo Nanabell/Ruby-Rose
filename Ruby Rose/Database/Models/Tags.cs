@@ -1,14 +1,12 @@
-﻿using RubyRose.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using MongoDB.Bson;
+using RubyRose.Database.Interfaces;
 
-namespace RubyRose.Database
+namespace RubyRose.Database.Models
 {
     public class Tags : IGuildNameIndexed
     {
-        public ObjectId _id { get; set; }
+        public ObjectId Id { get; set; }
         public ulong GuildId { get; set; }
         public string Name { get; set; }
         public string Content { get; set; }

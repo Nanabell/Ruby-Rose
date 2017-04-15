@@ -5,6 +5,10 @@ using System.Threading.Tasks;
 using RubyRose.Database;
 using RubyRose.Services;
 using Discord.WebSocket;
+using RubyRose.Common;
+using RubyRose.Common.Preconditions;
+using RubyRose.Database.Models;
+using RubyRose.Services.BadWordsFilter;
 
 namespace RubyRose.Modules.Moderation.BadWords
 {

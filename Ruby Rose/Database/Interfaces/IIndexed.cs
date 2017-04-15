@@ -1,12 +1,11 @@
 ﻿using MongoDB.Bson;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using MongoDB.Bson.Serialization.Attributes;
 
-namespace RubyRose.Database
+namespace RubyRose.Database.Interfaces
 {
     public interface IIndexed
     {
-        ObjectId _id { get; set; }
+        [BsonElement("_id")]
+        ObjectId Id { get; set; }
     }
 }

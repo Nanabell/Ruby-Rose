@@ -6,13 +6,14 @@ using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.RoleSystem.Management
 {
     [Name("Role System Management"), Group]
     public class RemoveJoinableCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public RemoveJoinableCommand(IDependencyMap map)
@@ -34,11 +35,11 @@ namespace RubyRose.Modules.RoleSystem.Management
             {
                 await allJoinables.DeleteAsync(joinable);
                 await ReplyAsync($"Joinable `{name}` dropped from Database");
-                logger.Info($"Deleted Joinable {name} on {Context.Guild.Name}");
+                Logger.Info($"Deleted Joinable {name} on {Context.Guild.Name}");
             }
             else
             {
-                logger.Warn($"Failed to delete joinable {name} on {Context.Guild.Name}, not Existent");
+                Logger.Warn($"Failed to delete joinable {name} on {Context.Guild.Name}, not Existent");
                 await ReplyAsync($"Joinable `{name.ToFirstUpper()}` not Existent");
             }
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace RubyRose.Database
+﻿namespace RubyRose.Database.Interfaces
 {
     public interface INameIndexed : IIndexed
     {

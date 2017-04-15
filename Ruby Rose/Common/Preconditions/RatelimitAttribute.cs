@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Commands;
-using static RubyRose.Common.Utils;
 
-namespace RubyRose
+namespace RubyRose.Common.Preconditions
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class RatelimitAttribute : PreconditionAttribute
@@ -69,7 +68,7 @@ namespace RubyRose
                 var gone = now - timeout.FirstInvoke;
                 var remain = _invokeLimitPeriod.Subtract(gone);
                 var end = DateTime.UtcNow.Add(remain);
-                var span = DateTimeSpan.CompareDates(now, end);
+                var span = Utils.DateTimeSpan.CompareDates(now, end);
                 return Task.FromResult(
                     PreconditionResult.FromError(
                         $"You are Ratelimited. Try again in {(span.TimeDisplay().Length != 0 ? span.TimeDisplay() : "less than a second")}"));

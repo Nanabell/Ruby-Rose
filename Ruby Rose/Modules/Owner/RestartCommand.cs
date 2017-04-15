@@ -1,10 +1,7 @@
 ﻿using Discord.Commands;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RubyRose.Modules.Owner
@@ -19,7 +16,7 @@ namespace RubyRose.Modules.Owner
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "dotnet",
-                    Arguments = $"run",
+                    Arguments = "run",
                     WorkingDirectory = Directory.GetCurrentDirectory(),
                     UseShellExecute = false,
                 }

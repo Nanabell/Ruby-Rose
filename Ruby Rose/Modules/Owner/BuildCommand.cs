@@ -1,11 +1,8 @@
 ﻿using Discord.Commands;
 using NLog;
-using RubyRose.Common;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -14,9 +11,9 @@ namespace RubyRose.Modules.Owner
     [Name("System")]
     public class BuildCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        public static async Task<string> dotnetBuild(string configuration, string verbosity)
+        public static async Task<string> DotnetBuild(string configuration, string verbosity)
         {
             var proc = new Process
             {
@@ -37,16 +34,13 @@ namespace RubyRose.Modules.Owner
 
                 if (error != "")
                 {
-                    logger.Error(error);
+                    Logger.Error(error);
                 }
 
-                if (Regex.IsMatch(report, @"Build \w+\."))
-                {
-                    Match m = Regex.Match(report, @"(Build \w+\.)");
+                if (!Regex.IsMatch(report, @"Build \w+\.")) return report;
+                var m = Regex.Match(report, @"(Build \w+\.)");
 
-                    return $"{report.Substring(m.Groups[1].Index)}";
-                }
-                return report;
+                return $"{report.Substring(m.Groups[1].Index)}";
             }
             else return "Failed to start dotnet build process.";
         }
@@ -55,7 +49,7 @@ namespace RubyRose.Modules.Owner
         [RequireOwner]
         public async Task Build(string configuration = "debug", string verbosity = "q")
         {
-            var report = await dotnetBuild(configuration, verbosity);
+            var report = await DotnetBuild(configuration, verbosity);
             Console.WriteLine(report);
         }
     }

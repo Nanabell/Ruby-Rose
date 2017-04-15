@@ -1,26 +1,23 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using NLog;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace RubyRose.Services
 {
     public class ServiceHandler
     {
-        private List<ServiceBase> _registeredServices = new List<ServiceBase>();
-        private List<ServiceBase> _lateRegister = new List<ServiceBase>();
-        private Logger _logger = LogManager.GetCurrentClassLogger();
-        private readonly DiscordSocketClient _client;
+        private readonly List<ServiceBase> _registeredServices = new List<ServiceBase>();
+        private readonly List<ServiceBase> _lateRegister = new List<ServiceBase>();
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         public ServiceHandler(IDependencyMap map)
         {
-            _client = map.Get<DiscordSocketClient>();
-            ServiceBase.Client = _client;
+            var client = map.Get<DiscordSocketClient>();
+            ServiceBase.Client = client;
             ServiceBase.Map = map;
 
             var allInstantServices = Assembly.GetEntryAssembly().ExportedTypes
@@ -28,7 +25,7 @@ namespace RubyRose.Services
 
             foreach (var s in allInstantServices)
             {
-                var constructor = s.GetConstructors().FirstOrDefault(c => c.GetParameters().Count() == 0);
+                var constructor = s.GetConstructors().FirstOrDefault(c => !c.GetParameters().Any());
                 var service = (ServiceBase)constructor.Invoke(new object[0]);
 
                 if (service.TryPreEnable().GetAwaiter().GetResult())
@@ -44,7 +41,7 @@ namespace RubyRose.Services
                 }
             }
             if (_lateRegister.Count > 0)
-                _client.Ready += LateRegister;
+                client.Ready += LateRegister;
         }
 
         private async Task LateRegister()

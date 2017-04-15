@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.RoleSystem
 {
@@ -40,7 +41,7 @@ namespace RubyRose.Modules.RoleSystem
                 {
                     joinables.ForEach(x =>
                     {
-                        if ((Context.User as IGuildUser).RoleIds.Contains(x.RoleId))
+                        if (((IGuildUser) Context.User).RoleIds.Contains(x.RoleId))
                         {
                             roles.Add(Context.Guild.GetRole(x.RoleId));
                             sb.AppendLine(x.Name.ToFirstUpper());
@@ -52,7 +53,7 @@ namespace RubyRose.Modules.RoleSystem
                 var result = joinables.FirstOrDefault(f => f.Name == word);
                 if (result == null) continue;
 
-                if (!(Context.User as IGuildUser).RoleIds.Contains(result.RoleId))
+                if (!((IGuildUser) Context.User).RoleIds.Contains(result.RoleId))
                 {
                     sb.AppendLine($"{result.Name.ToFirstUpper()} --already left");
                     continue;
@@ -63,12 +64,12 @@ namespace RubyRose.Modules.RoleSystem
 
             if (roles.Count > 0)
             {
-                await (Context.User as SocketGuildUser).RemoveRolesAsync(roles);
+                await ((SocketGuildUser) Context.User).RemoveRolesAsync(roles);
                 await Context.Channel.SendEmbedAsync(Embeds.Success("You left the roles for", sb.ToString()));
             }
             else
             {
-                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb.ToString()));
+                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb));
             }
         }
     }

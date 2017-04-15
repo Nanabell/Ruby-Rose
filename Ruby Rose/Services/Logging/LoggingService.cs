@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
 using RubyRose.Database.Models;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ namespace RubyRose.Services.Logging
 {
     public class LoggingService : ServiceBase
     {
-        private static ConcurrentDictionary<ulong, bool> Logging = new ConcurrentDictionary<ulong, bool>();
         private static MongoClient _mongo;
 
         protected override Task PreDisable()
@@ -35,7 +33,7 @@ namespace RubyRose.Services.Logging
             return Task.CompletedTask;
         }
 
-        private async Task Client_MessageDeleted(Cacheable<IMessage, ulong> arg, ISocketMessageChannel channel)
+        private static async Task Client_MessageDeleted(Cacheable<IMessage, ulong> arg, ISocketMessageChannel channel)
         {
             var removedMessage = await arg.GetOrDownloadAsync();
             if (removedMessage is SocketUserMessage message)
@@ -52,7 +50,7 @@ namespace RubyRose.Services.Logging
             }
         }
 
-        private async Task Client_MessageUpdated(Cacheable<IMessage, ulong> oldMessage, SocketMessage newMessage, ISocketMessageChannel channel)
+        private static async Task Client_MessageUpdated(Cacheable<IMessage, ulong> oldMessage, SocketMessage newMessage, ISocketMessageChannel channel)
         {
             if (newMessage is SocketUserMessage message)
             {
@@ -69,7 +67,7 @@ namespace RubyRose.Services.Logging
             }
         }
 
-        private async Task Client_MessageReceived(SocketMessage arg)
+        private static async Task Client_MessageReceived(SocketMessage arg)
         {
             if (arg is SocketUserMessage message)
             {

@@ -1,10 +1,6 @@
-﻿using NLog;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace RubyRose.Services
+namespace RubyRose.Services.SetGame
 {
     public class SetGameService : ServiceBase
     {
@@ -26,7 +22,7 @@ namespace RubyRose.Services
         private async Task SetGame()
         {
             _config = Map.Get<CoreConfig>();
-            _logger.Info($"Set Game to: {_config.Game}");
+            Logger.Info($"Set Game to: {_config.Game}");
             await Client.SetGameAsync(_config.Game);
         }
     }

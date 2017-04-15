@@ -8,13 +8,14 @@ using RubyRose.Database;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.Fun
 {
     [Name("Fun"), Group]
     public class OneTruePairCommand : ModuleBase
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public OneTruePairCommand(IDependencyMap map)
@@ -36,9 +37,9 @@ namespace RubyRose.Modules.Fun
             if (oneTruePair != null)
             {
                 selectionRole = Context.Guild.GetRole(oneTruePair.RoleId);
-                logger.Info($"OneTruePair Role {selectionRole.Name} on {Context.Guild} accepted");
+                Logger.Info($"OneTruePair Role {selectionRole.Name} on {Context.Guild} accepted");
             }
-            else logger.Warn($"No OneTruePair Role set on {Context.Guild} defaulting to @everyone Role");
+            else Logger.Warn($"No OneTruePair Role set on {Context.Guild} defaulting to @everyone Role");
 
             var allUsers = await Context.Guild.GetUsersAsync();
             var users = allUsers.Where(x => x.GetRoles().Any(r => r == selectionRole)).ToList();

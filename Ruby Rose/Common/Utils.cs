@@ -1,11 +1,4 @@
-﻿using Newtonsoft.Json;
-using RubyRose.Database;
-using System;
-using System.IO;
-using NLog;
-using NLog.Config;
-using NLog.Targets;
-using NLog.Layouts;
+﻿using System;
 
 namespace RubyRose.Common
 {
@@ -15,13 +8,13 @@ namespace RubyRose.Common
         {
             public DateTimeSpan(int years, int months, int days, int hours, int minutes, int seconds, int milliseconds)
             {
-                this.Years = years;
-                this.Months = months;
-                this.Days = days;
-                this.Hours = hours;
-                this.Minutes = minutes;
-                this.Seconds = seconds;
-                this.Milliseconds = milliseconds;
+                Years = years;
+                Months = months;
+                Days = days;
+                Hours = hours;
+                Minutes = minutes;
+                Seconds = seconds;
+                Milliseconds = milliseconds;
             }
 
             public int Years { get; }
