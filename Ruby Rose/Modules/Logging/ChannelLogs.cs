@@ -26,6 +26,11 @@ namespace RubyRose.Modules.Logging
         [MinPermission(AccessLevel.ServerAdmin)]
         public async Task Invoke(IMessageChannel channel = null, int count = 1000)
         {
+            try { await Context.Message.DeleteAsync(); }
+            catch
+            {
+                // ignored
+            }
             channel = channel ?? Context.Channel;
             var allLogs = _mongo.GetCollection<MessageLoggings>(Context.Client);
             var channelLogs = await GetChannelLogs(allLogs, channel);
@@ -51,12 +56,10 @@ namespace RubyRose.Modules.Logging
                     }
                 }
 
-                if (channelLog.AttachmentUrls.Any())
+                if (!channelLog.AttachmentUrls.Any()) continue;
+                foreach (var attachment in channelLog.AttachmentUrls)
                 {
-                    foreach (var attachment in channelLog.AttachmentUrls)
-                    {
-                        sb.AppendLine($"[ATTACHMENT] {attachment}");
-                    }
+                    sb.AppendLine($"[ATTACHMENT] {attachment}");
                 }
             }
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));

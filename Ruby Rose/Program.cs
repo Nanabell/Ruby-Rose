@@ -5,6 +5,7 @@ using MongoDB.Driver;
 using NLog;
 using RubyRose.Services;
 using System.Threading.Tasks;
+using RubyRose.RWBY;
 
 namespace RubyRose
 {
@@ -62,6 +63,8 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
             map.Add(config);
 
             Logger.Info("Initializing Service Handler");
+            GameBase.MongoClient = mongo;
+            // ReSharper disable once ObjectCreationAsStatement
             new ServiceHandler(map);
 
             Logger.Info("Starting Login to Discord");

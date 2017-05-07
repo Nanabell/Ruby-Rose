@@ -80,7 +80,7 @@ namespace RubyRose
                             if (response != null)
                                 await context.ReplyAsync(response);
                         }
-                        else Logger.Warn($"Suppressing Result on behalf of settings");
+                        else Logger.Warn("Suppressing Result on behalf of settings");
                     }
                 }
                 catch (Exception e)
