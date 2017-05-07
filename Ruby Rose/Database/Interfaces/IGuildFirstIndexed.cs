@@ -1,6 +1,6 @@
 ﻿namespace RubyRose.Database.Interfaces
 {
-    public interface IGuildOneIndexed : IGuildIndexed
+    public interface IGuildFirstIndexed : IGuildIndexed
     {
     }
 }

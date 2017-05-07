@@ -3,8 +3,10 @@ using MongoDB.Driver;
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using RubyRose.Database.Interfaces;
+using RubyRose.RWBY.Entities.Item;
 
 namespace RubyRose.Database
 {
@@ -28,64 +30,83 @@ namespace RubyRose.Database
 
             Logger.Trace($"Connecting to Database {dbName}");
             var db = mongo.GetDatabase(dbName);
-            Logger.Trace($"Connected to Database {dbName}");
 
             Logger.Trace($"Loading Collection {typeof(T).Name}");
             return db.GetCollection<T>(typeof(T).Name);
         }
 
-        public static async Task<T> GetFirstAsync<T>(this IMongoCollection<T> collection) where T : IIndexed
+        public static async Task<T> FirstOrDefaultAsync<T>(this IMongoCollection<T> collection) where T : IIndexed
         {
             var cursor = await collection.FindAsync("{}");
-            Logger.Debug($"Returning first document in collection {collection.CollectionNamespace}");
+            return await cursor.FirstOrDefaultAsync();
+        }
+
+        public static async Task<T> FirstOrDefaultAsync<T>(this IMongoCollection<T> collection, Expression<Func<T, bool>> filter) where T : IIndexed
+        {
+            var cursor = await collection.FindAsync(filter);
             return await cursor.FirstOrDefaultAsync();
         }
 
         public static async Task<DeleteResult> DeleteAsync<T>(this IMongoCollection<T> collection, T entity) where T : IIndexed
         {
-            Logger.Info($"Deleting document with Id {entity.Id} in collection {collection.CollectionNamespace}");
             return await collection.DeleteOneAsync(i => i.Id == entity.Id);
         }
 
         public static async Task<ReplaceOneResult> SaveAsync<T>(this IMongoCollection<T> collection, T entity) where T : IIndexed
         {
-            Logger.Info($"Updating document with Id {entity.Id} in collection {collection.CollectionNamespace}");
             return await collection.ReplaceOneAsync(i => i.Id == entity.Id, entity, new UpdateOptions { IsUpsert = true });
         }
 
         public static async Task<T> GetByNameAsync<T>(this IMongoCollection<T> collection, IGuild guild, string name) where T : IGuildNameIndexed
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.Name == name);
-            Logger.Debug($"Returning first document where name={name} & GuildId={guild.Id} in collection {collection.CollectionNamespace}");
             return await cursor.FirstOrDefaultAsync();
         }
 
         public static async Task<List<T>> GetListAsync<T>(this IMongoCollection<T> collection, IGuild guild) where T : IGuildIndexed
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
-            Logger.Debug($"Returning list of document where GuildId={guild.Id} in collection {collection.CollectionNamespace}");
             return await cursor.ToListAsync();
         }
 
-        public static async Task<T> GetByGuildAsync<T>(this IMongoCollection<T> collection, IGuild guild) where T : IGuildOneIndexed
+        public static async Task<T> GetByGuildAsync<T>(this IMongoCollection<T> collection, IGuild guild) where T : IGuildFirstIndexed
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
-            Logger.Debug($"Returning first document where GuildId={guild.Id} in collection {collection.CollectionNamespace}");
             return await cursor.FirstOrDefaultAsync();
         }
 
         public static async Task<T> GetByNameAsync<T>(this IMongoCollection<T> collection, string name) where T : INameIndexed
         {
             var cursor = await collection.FindAsync(f => f.Name == name);
-            Logger.Debug($"Returning first document where name={name} in collection {collection.CollectionNamespace}");
             return await cursor.FirstOrDefaultAsync();
         }
 
-        public static async Task<T> GetByMessageIdAsyc<T>(this IMongoCollection<T> collection, IGuild guild, ulong messageId) where T : IGuildIdIndexed
+        public static async Task<T> GetByMessageIdAsyc<T>(this IMongoCollection<T> collection, IGuild guild,
+            ulong messageId) where T : IGuildMessageIdIndexed
         {
             var cursor = await collection.FindAsync(f => f.GuildId == guild.Id && f.MessageId == messageId);
-            Logger.Debug($"Returning first document where messageId={messageId} in collection {collection.CollectionNamespace}");
             return await cursor.FirstOrDefaultAsync();
+        }
+
+        public static async Task<T> GetByIdAsync<T>(this IMongoCollection<T> collection, int id)
+            where T : IItemIdIndexed
+        {
+            var cursor = await collection.FindAsync(f => f.ItemId == id);
+            return await cursor.FirstOrDefaultAsync();
+        }
+
+        public static async Task<T> GetByUserIdAsync<T>(this IMongoCollection<T> collection, ulong userId)
+            where T : IGuildUserIndexed
+        {
+            var cursor = await collection.FindAsync(f => f.UserId == userId);
+            return await cursor.FirstOrDefaultAsync();
+        }
+
+
+        public static async Task<List<T>> All<T>(this IMongoCollection<T> collection) where T : IIndexed
+        {
+            var cursor = await collection.FindAsync("{}");
+            return await cursor.ToListAsync();
         }
     }
 }

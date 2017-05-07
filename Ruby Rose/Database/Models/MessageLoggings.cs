@@ -5,7 +5,7 @@ using RubyRose.Database.Interfaces;
 
 namespace RubyRose.Database.Models
 {
-    internal class MessageLoggings : IGuildIdIndexed
+    internal class MessageLoggings : IGuildMessageIdIndexed
     {
         public ObjectId Id { get; set; }
         public ulong GuildId { get; set; }

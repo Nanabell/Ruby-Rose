@@ -3,7 +3,7 @@ using RubyRose.Database.Interfaces;
 
 namespace RubyRose.Database.Models
 {
-    public class OneTruePairs : IGuildOneIndexed
+    public class OneTruePairs : IGuildFirstIndexed
     {
         public ObjectId Id { get; set; }
         public ulong GuildId { get; set; }

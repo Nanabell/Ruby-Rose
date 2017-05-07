@@ -5,7 +5,7 @@ using RubyRose.Database.Interfaces;
 
 namespace RubyRose.Database.Models
 {
-    public class Settings : IGuildOneIndexed
+    public class Settings : IGuildFirstIndexed
     {
         public ObjectId Id { get; set; }
 

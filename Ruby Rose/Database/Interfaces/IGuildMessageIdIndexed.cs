@@ -1,6 +1,6 @@
 ﻿namespace RubyRose.Database.Interfaces
 {
-    public interface IGuildIdIndexed : IGuildIndexed
+    public interface IGuildMessageIdIndexed : IGuildIndexed
     {
         ulong MessageId { get; set; }
     }
