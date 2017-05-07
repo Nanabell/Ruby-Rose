@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using RubyRose.Database.Interfaces;
-using RubyRose.RWBY.Entities.Item;
 
 namespace RubyRose.Database
 {
