@@ -5,7 +5,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
-using RubyRose.Database.Models;
+using RubyRose.RWBY.Entities.Player;
 
 namespace RubyRose.Common.Preconditions
 {
@@ -62,7 +62,7 @@ namespace RubyRose.Common.Preconditions
 
             if (requestedLvl == AccessLevel.Special)
             {
-                var users = _mongo.GetCollection<Users>(context.Client).GetListAsync(context.Guild).GetAwaiter().GetResult();
+                var users = _mongo.GetCollection<User>(context.Client).GetListAsync(context.Guild).GetAwaiter().GetResult();
 
                 if (users.Exists(x => x.UserId == user.Id))
                 {

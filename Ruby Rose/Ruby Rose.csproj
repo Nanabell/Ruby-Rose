@@ -39,4 +39,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="RWBY\Commands\" />
+  </ItemGroup>
 </Project>
