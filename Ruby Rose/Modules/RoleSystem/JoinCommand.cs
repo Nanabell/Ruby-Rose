@@ -29,76 +29,92 @@ namespace RubyRose.Modules.RoleSystem
         [Command("Join")]
         [Summary("Join roles that are marked as joinable.")]
         [MinPermission(AccessLevel.User), RequireAllowed, Ratelimit(4, 1, Measure.Minutes)]
-        public async Task Join([Remainder] string name)
+        public async Task Join([Remainder] string input)
         {
-            var roles = new List<IRole>();
-            var sb = new StringBuilder();
-
-            name = name.ToLower();
             var joinables = await _mongo.GetCollection<Joinables>(Context.Client).GetListAsync(Context.Guild);
+            var names = input.ToLower().Split(' ');
 
-            foreach (var word in name.Split(' '))
+            var entitled = GetEntitled(joinables, names, Context.User as IGuildUser);
+
+            if (entitled.Any())
             {
-                if (word == "all")
+                var sb = new StringBuilder();
+                await ((SocketGuildUser) Context.User).AddRolesAsync(entitled, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
+                foreach (var role in entitled)
                 {
-                    foreach (var joinable in joinables)
-                    {
-                        if (joinable.Level > 0)
-                        {
-                            sb.AppendLine($"{joinable.Name.ToFirstUpper()} --cant join with all");
-                            continue;
-                        }
-                        if (!(Context.User as IGuildUser).RoleIds.Contains(joinable.RoleId))
-                        {
-                            roles.Add(Context.Guild.GetRole(joinable.RoleId));
-                            sb.AppendLine(joinable.Name.ToFirstUpper());
-                        }
-                        else sb.AppendLine($"{joinable.Name.ToFirstUpper()} --already joined");
-                    }
-                    break;
+                    sb.AppendLine(role.Name);
                 }
-                var result = joinables.FirstOrDefault(f => f.Name == word);
-                if (result == null) continue;
-                try
-                {
-                    if (result.Level > 0)
-                    {
-                        var skip = false;
-                        var rolelist = joinables.Where(x => x.Level == result.Level).ToList();
-                        var userRoles = (Context.User as SocketGuildUser).Roles;
-                        foreach (var role in rolelist)
-                        {
-                            if (userRoles.All(x => x.Id != role.RoleId)) continue;
-                            sb.AppendLine($"{result.Name.ToFirstUpper()} --cant join, user has already a role of level {result.Level}");
-                            skip = true;
-                        }
-                        if (skip)
-                            continue;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.Warn($"Role Level Compare Faild:\n{e}");
-                }
-
-                if ((Context.User as IGuildUser).RoleIds.Contains(result.RoleId))
-                {
-                    sb.AppendLine($"{result.Name.ToFirstUpper()} --already joined");
-                    continue;
-                }
-                roles.Add(Context.Guild.GetRole(result.RoleId));
-                sb.AppendLine(result.Name.ToFirstUpper());
-            }
-
-            if (roles.Count > 0)
-            {
-                await (Context.User as SocketGuildUser).AddRolesAsync(roles, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
-                await Context.Channel.SendEmbedAsync(Embeds.Success("You now have the roles for", sb.ToString()));
+                await Context.Channel.SendEmbedAsync(Embeds.Success("Added to", sb.ToString()));
             }
             else
             {
-                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb));
+                await Context.ReplyAsync(
+                    ":warning: Unable to add to any Role. Either invalid input or you already have them");
             }
+        }
+
+        private static ICollection<IRole> GetEntitled(ICollection<Joinables> joinables, ICollection<string> names, IGuildUser user)
+        {
+            var entitled = new List<IRole>();
+            var userRoles = user.GetRoles().ToList();
+            var guild = user.Guild;
+
+            if (names.Contains("all"))
+                return GetAllEntitled(joinables, user);
+
+            foreach (var name in names)
+            {
+                var joinable = joinables.FirstOrDefault(join => join.Name == name);
+
+                if (userRoles.Any(role => role.Id == joinable.RoleId))
+                    continue;
+                if (joinable == null) continue;
+
+                var sameLevel = joinables.Where(join => join.Level == joinable.Level);
+                var skip = false;
+                foreach (var join in sameLevel)
+                {
+                    if (userRoles.Any(role => role.Id == join.RoleId))
+                        skip = true;
+                }
+                if (skip)
+                    continue;
+
+                try
+                {
+                    entitled.Add(guild.GetRole(joinable.RoleId));
+                }
+                catch (Exception e)
+                {
+                    Logger.Warn(e, "Failed to add Role to entitled RoleList");
+                }
+            }
+            return entitled;
+        }
+
+        private static ICollection<IRole> GetAllEntitled(IEnumerable<Joinables> joinables, IGuildUser user)
+        {
+            var entitled = new List<IRole>();
+            var userRoles = user.GetRoles().ToList();
+            var guild = user.Guild;
+
+            foreach (var joinable in joinables)
+            {
+                if (userRoles.Any(role => role.Id == joinable.RoleId))
+                    continue;
+                if (joinable.Level > 0)
+                    continue;
+
+                try
+                {
+                    entitled.Add(guild.GetRole(joinable.RoleId));
+                }
+                catch (Exception e)
+                {
+                    Logger.Warn(e, "Failed to add Role to entitled RoleList");
+                }
+            }
+            return entitled;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NLog;
 using RubyRose.Database.Models;
 
 namespace RubyRose.Modules.RoleSystem
@@ -17,6 +19,7 @@ namespace RubyRose.Modules.RoleSystem
     public class LeaveCommand : ModuleBase
     {
         private readonly MongoClient _mongo;
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public LeaveCommand(IDependencyMap map)
         {
@@ -27,50 +30,82 @@ namespace RubyRose.Modules.RoleSystem
         [Summary("Leavea role marked as Joinable")]
         [MinPermission(AccessLevel.User), RequireAllowed, Ratelimit(4, 1, Measure.Minutes)]
         [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task Leave([Remainder] string name)
+        public async Task Leave([Remainder] string input)
         {
-            var roles = new List<IRole>();
-            var sb = new StringBuilder();
-
-            name = name.ToLower();
             var joinables = await _mongo.GetCollection<Joinables>(Context.Client).GetListAsync(Context.Guild);
+            var names = input.ToLower().Split(' ');
 
-            foreach (var word in name.Split(' '))
+            var entitled = GetEntitled(joinables, names, Context.User as IGuildUser);
+
+            if (entitled.Any())
             {
-                if (word == "all")
+                var sb = new StringBuilder();
+                await ((SocketGuildUser) Context.User).RemoveRolesAsync(entitled, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
+                foreach (var role in entitled)
                 {
-                    joinables.ForEach(x =>
-                    {
-                        if (((IGuildUser) Context.User).RoleIds.Contains(x.RoleId))
-                        {
-                            roles.Add(Context.Guild.GetRole(x.RoleId));
-                            sb.AppendLine(x.Name.ToFirstUpper());
-                        }
-                        else sb.AppendLine($"{x.Name.ToFirstUpper()} --already left");
-                    });
-                    break;
+                    sb.AppendLine(role.Name);
                 }
-                var result = joinables.FirstOrDefault(f => f.Name == word);
-                if (result == null) continue;
-
-                if (!((IGuildUser) Context.User).RoleIds.Contains(result.RoleId))
-                {
-                    sb.AppendLine($"{result.Name.ToFirstUpper()} --already left");
-                    continue;
-                }
-                roles.Add(Context.Guild.GetRole(result.RoleId));
-                sb.AppendLine(result.Name.ToFirstUpper());
-            }
-
-            if (roles.Count > 0)
-            {
-                await ((SocketGuildUser) Context.User).RemoveRolesAsync(roles);
-                await Context.Channel.SendEmbedAsync(Embeds.Success("You left the roles for", sb.ToString()));
+                await Context.Channel.SendEmbedAsync(Embeds.Success("Removed from", sb.ToString()));
             }
             else
             {
-                await Context.Channel.SendEmbedAsync(Embeds.NotFound("No valid role with given input found.\n" + sb));
+                await Context.ReplyAsync(
+                    ":warning: Unable to remove from any Role. Either invalid input or you dont have them");
             }
+        }
+
+        private static ICollection<IRole> GetEntitled(ICollection<Joinables> joinables, ICollection<string> names, IGuildUser user)
+        {
+            var entitled = new List<IRole>();
+            var userRoles = user.GetRoles().ToList();
+            var guild = user.Guild;
+
+            if (names.Contains("all"))
+                return GetAllEntitled(joinables, user);
+
+            foreach (var name in names)
+            {
+                var joinable = joinables.FirstOrDefault(join => join.Name == name);
+
+                if (userRoles.All(role => role.Id != joinable.RoleId))
+                    continue;
+                if (joinable == null) continue;
+
+                try
+                {
+                    entitled.Add(guild.GetRole(joinable.RoleId));
+                }
+                catch (Exception e)
+                {
+                    Logger.Warn(e, "Failed to add Role to entitled RoleList");
+                }
+            }
+            return entitled;
+        }
+
+        private static ICollection<IRole> GetAllEntitled(IEnumerable<Joinables> joinables, IGuildUser user)
+        {
+            var entitled = new List<IRole>();
+            var userRoles = user.GetRoles().ToList();
+            var guild = user.Guild;
+
+            foreach (var joinable in joinables)
+            {
+                if (userRoles.All(role => role.Id != joinable.RoleId))
+                    continue;
+                if (joinable.Level > 0)
+                    continue;
+
+                try
+                {
+                    entitled.Add(guild.GetRole(joinable.RoleId));
+                }
+                catch (Exception e)
+                {
+                    Logger.Warn(e, "Failed to add Role to entitled RoleList");
+                }
+            }
+            return entitled;
         }
     }
 }
