@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Discord;
 using RubyRose.Common;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.RwbyFight
 {
@@ -27,7 +28,7 @@ namespace RubyRose.Services.RwbyFight
 
         protected override async Task PreEnable()
         {
-            await ReloadRwbyFight(Client, Map.Get<MongoClient>());
+            await ReloadRwbyFight(Client, Provider.GetService<MongoClient>());
             Client.MessageReceived += Client_MessageReceived;
         }
 

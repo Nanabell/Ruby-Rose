@@ -9,6 +9,7 @@ using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using NLog;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.Moderation
 {
@@ -21,9 +22,9 @@ namespace RubyRose.Modules.Moderation
             private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
             private readonly MongoClient _mongo;
 
-            public WhitelistCommands(IDependencyMap map)
+            public WhitelistCommands(IServiceProvider provider)
             {
-                _mongo = map.Get<MongoClient>();
+                _mongo = provider.GetService<MongoClient>();
             }
 
             [Command("Add")]

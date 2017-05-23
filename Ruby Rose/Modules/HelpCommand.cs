@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules
 {
@@ -13,21 +14,21 @@ namespace RubyRose.Modules
     public class HelpCommand : ModuleBase
     {
         private readonly CommandService _service;
-        private readonly IDependencyMap _map;
+        private readonly IServiceProvider _provider;
         private readonly CoreConfig _config;
 
-        public HelpCommand(CommandService service, IDependencyMap map)
+        public HelpCommand(CommandService service, IServiceProvider provider)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
-            _config = map.Get<CoreConfig>();
-            _map = map;
+            _config = provider.GetService<CoreConfig>();
+            _provider = provider;
         }
 
         [Command("Help")]
         [Summary("Display what commands you can use"), Hidden]
         public async Task Help()
         {
-            var cmdgrps = (await _service.Commands.CheckConditionsAsync(Context, _map))
+            var cmdgrps = (await _service.Commands.CheckConditionsAsync(Context, _provider))
                 .Where(c => !c.Preconditions.Any(p => p is HiddenAttribute))
                 .GroupBy(c => (c.Module.IsSubmodule ? c.Module.Parent.Name : c.Module.Name));
 
@@ -53,7 +54,7 @@ namespace RubyRose.Modules
         [Summary("Display how you can use a command"), Hidden]
         public async Task Help(string commandName)
         {
-            var commands = (await _service.Commands.CheckConditionsAsync(Context, _map)).Where(
+            var commands = (await _service.Commands.CheckConditionsAsync(Context, _provider)).Where(
                 c => (c.Aliases.FirstOrDefault().Equals(commandName, StringComparison.OrdinalIgnoreCase)) ||
                      (c.Module.IsSubmodule && c.Module.Aliases.FirstOrDefault()
                           .Equals(commandName, StringComparison.OrdinalIgnoreCase)) &&

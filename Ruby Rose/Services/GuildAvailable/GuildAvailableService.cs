@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using RubyRose.Database;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.GuildAvailable
 {
@@ -18,7 +19,7 @@ namespace RubyRose.Services.GuildAvailable
 
         protected override Task PreEnable()
         {
-            _mongo = Map.Get<MongoClient>();
+            _mongo = Provider.GetService<MongoClient>();
             Client.GuildAvailable += Client_GuildAvailable;
             return Task.CompletedTask;
         }

@@ -4,6 +4,8 @@ using RubyRose.Database;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
 using RubyRose.RWBY.Entities.Player;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace RubyRose.Common.Preconditions
 {
@@ -20,9 +22,9 @@ namespace RubyRose.Common.Preconditions
             _dust = dust;
         }
 
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider provider)
         {
-            var mongo = map.Get<MongoClient>();
+            var mongo = provider.GetService<MongoClient>();
             var dust = GetUserDust(context, mongo);
 
             if (dust >= _dust)

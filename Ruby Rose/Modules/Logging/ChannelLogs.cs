@@ -9,6 +9,8 @@ using RubyRose.Database;
 using RubyRose.Database.Models;
 using System.Text;
 using System.IO;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.Logging
 {
@@ -17,9 +19,9 @@ namespace RubyRose.Modules.Logging
     {
         private readonly MongoClient _mongo;
 
-        public ChannelLogs(IDependencyMap map)
+        public ChannelLogs(IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("ChannelLogs")]

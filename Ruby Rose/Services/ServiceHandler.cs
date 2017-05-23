@@ -1,10 +1,12 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using NLog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services
 {
@@ -14,11 +16,11 @@ namespace RubyRose.Services
         private readonly List<ServiceBase> _lateRegister = new List<ServiceBase>();
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        public ServiceHandler(IDependencyMap map)
+        public ServiceHandler(IServiceProvider provider)
         {
-            var client = map.Get<DiscordSocketClient>();
+            var client = provider.GetService<DiscordSocketClient>();
             ServiceBase.Client = client;
-            ServiceBase.Map = map;
+            ServiceBase.Provider = provider;
 
             var allInstantServices = Assembly.GetEntryAssembly().ExportedTypes
                 .Where(x => x.GetTypeInfo().BaseType == typeof(ServiceBase));

@@ -9,6 +9,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.Fun
 {
@@ -18,9 +19,9 @@ namespace RubyRose.Modules.Fun
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
-        public OneTruePairCommand(IDependencyMap map)
+        public OneTruePairCommand(IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("OneTruePair"), Alias("OTP")]

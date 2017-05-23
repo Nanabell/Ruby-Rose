@@ -6,6 +6,8 @@ using RubyRose.Database;
 using System.Threading.Tasks;
 using RubyRose.Common;
 using RubyRose.Database.Models;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.Moderation
 {
@@ -17,9 +19,9 @@ namespace RubyRose.Modules.Moderation
         {
             private readonly MongoClient _mongo;
 
-            public ResultAnnounceSettingsCommands(IDependencyMap map)
+            public ResultAnnounceSettingsCommands(IServiceProvider provider)
             {
-                _mongo = map.Get<MongoClient>();
+                _mongo = provider.GetService<MongoClient>();
             }
 
             [Command("Enable"), Alias("On, True, 1, Yes")]

@@ -9,6 +9,7 @@ using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Database;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.BadWordsFilter
 {
@@ -24,7 +25,7 @@ namespace RubyRose.Services.BadWordsFilter
 
         protected override async Task PreEnable()
         {
-            await ReloadBadWords(Client, Map.Get<MongoClient>());
+            await ReloadBadWords(Client, Provider.GetService<MongoClient>());
             Client.MessageReceived += Client_MessageReceived;
         }
 

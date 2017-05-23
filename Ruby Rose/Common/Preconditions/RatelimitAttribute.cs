@@ -53,7 +53,7 @@ namespace RubyRose.Common.Preconditions
             _invokeLimitPeriod = period;
         }
 
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider provider)
         {
             var now = DateTime.UtcNow;
             CommandTimeout t;

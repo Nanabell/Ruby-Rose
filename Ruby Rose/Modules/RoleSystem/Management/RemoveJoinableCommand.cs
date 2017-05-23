@@ -7,6 +7,8 @@ using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.RoleSystem.Management
 {
@@ -16,9 +18,9 @@ namespace RubyRose.Modules.RoleSystem.Management
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
-        public RemoveJoinableCommand(IDependencyMap map)
+        public RemoveJoinableCommand(IServiceProvider map)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = map.GetService<MongoClient>();
         }
 
         [Command("RemoveJoinable")]

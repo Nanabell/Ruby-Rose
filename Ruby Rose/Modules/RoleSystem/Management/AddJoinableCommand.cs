@@ -8,6 +8,8 @@ using RubyRose.Database;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.RoleSystem.Management
 {
@@ -17,9 +19,9 @@ namespace RubyRose.Modules.RoleSystem.Management
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
-        public AddJoinableCommand(IDependencyMap map)
+        public AddJoinableCommand(IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("AddJoinable")]

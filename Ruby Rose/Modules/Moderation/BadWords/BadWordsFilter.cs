@@ -9,6 +9,8 @@ using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database.Models;
 using RubyRose.Services.BadWordsFilter;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.Moderation.BadWords
 {
@@ -20,9 +22,9 @@ namespace RubyRose.Modules.Moderation.BadWords
         {
             private readonly MongoClient _mongo;
 
-            public BadWordsCommands(IDependencyMap map)
+            public BadWordsCommands(IServiceProvider provider)
             {
-                _mongo = map.Get<MongoClient>();
+                _mongo = provider.GetService<MongoClient>();
             }
 
             [Command]

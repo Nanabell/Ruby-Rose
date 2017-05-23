@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using NLog;
+using System;
 using System.Threading.Tasks;
 
 namespace RubyRose.Services
@@ -8,7 +9,7 @@ namespace RubyRose.Services
     public abstract class ServiceBase
     {
         public static DiscordSocketClient Client;
-        public static IDependencyMap Map;
+        public static IServiceProvider Provider;
         internal static Logger Logger = LogManager.GetCurrentClassLogger();
         public bool IsEnabled { get; internal set; }
 

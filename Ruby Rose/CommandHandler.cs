@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using RubyRose.Common;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose
 {
@@ -20,7 +21,7 @@ namespace RubyRose
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private DiscordSocketClient _client;
         private CommandService _commandService;
-        private IDependencyMap _map;
+        private IServiceProvider _provider;
         private CoreConfig _config;
 
         public async Task HandleCommand(SocketMessage parameterMessage)
@@ -46,7 +47,7 @@ namespace RubyRose
             {
                 try
                 {
-                    var result = await _commandService.ExecuteAsync(context, argPos, _map);
+                    var result = await _commandService.ExecuteAsync(context, argPos, _provider);
 
                     Logger.Info($"Command ran by {context.User} in {context.Guild.Name} - {context.Message.Content}");
 
@@ -98,22 +99,17 @@ namespace RubyRose
                 ResultAnnounce.AddOrUpdate(settings.GuildId, settings.ResultAnnounce, (key, oldvalue) => settings.ResultAnnounce);
         }
 
-        public async Task Install(IDependencyMap map)
+        public async Task Install(IServiceProvider provider)
         {
             Logger.Debug("Creating new CommandService");
-            _commandService = new CommandService(new CommandServiceConfig()
-            {
-                LogLevel = LogSeverity.Debug,
-                DefaultRunMode = RunMode.Sync,
-                ThrowOnError = true
-            });
+            _commandService = provider.GetService<CommandService>();
             Logger.Trace("Adding TypeReaders to CommandService");
             _commandService.AddTypeReader<CommandInfo>(new CommandInfoTypeReader(_commandService));
             _commandService.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
-            _client = map.Get<DiscordSocketClient>();
-            _config = map.Get<CoreConfig>();
-            _map = map;
-            await ReloadResultAnnounce(_client, map.Get<MongoClient>());
+            _client = provider.GetService<DiscordSocketClient>();
+            _config = provider.GetService<CoreConfig>();
+            _provider = provider;
+            await ReloadResultAnnounce(_client, provider.GetService<MongoClient>());
 
             Logger.Debug("Loading Modules from Entry Assembly");
             await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());

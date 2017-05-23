@@ -7,6 +7,8 @@ using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.TagSystem
 {
@@ -16,9 +18,9 @@ namespace RubyRose.Modules.TagSystem
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
-        public DeleteTagCommand(IDependencyMap map)
+        public DeleteTagCommand(IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("DeleteTag"), Alias("RemoveTag", "RmTag")]

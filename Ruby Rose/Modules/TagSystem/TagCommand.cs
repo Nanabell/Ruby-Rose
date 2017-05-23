@@ -8,6 +8,7 @@ using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using NLog;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.TagSystem
 {
@@ -17,9 +18,9 @@ namespace RubyRose.Modules.TagSystem
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
-        public TagCommand(IDependencyMap map)
+        public TagCommand(IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("Tag"), Alias("Tags")]

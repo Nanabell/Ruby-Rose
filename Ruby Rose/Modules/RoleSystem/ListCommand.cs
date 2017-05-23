@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RubyRose.Database.Models;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.RoleSystem
 {
@@ -15,9 +17,9 @@ namespace RubyRose.Modules.RoleSystem
     {
         private readonly MongoClient _mongo;
 
-        public ListCommand(IDependencyMap map)
+        public ListCommand(IServiceProvider provider)
         {
-            _mongo = map?.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("List")]

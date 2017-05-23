@@ -6,6 +6,7 @@ using RubyRose.Database.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.Logging
 {
@@ -24,7 +25,7 @@ namespace RubyRose.Services.Logging
 
         protected override Task PreEnable()
         {
-            _mongo = Map.Get<MongoClient>();
+            _mongo = Provider.GetService<MongoClient>();
 
             Client.MessageReceived += Client_MessageReceived;
             Client.MessageUpdated += Client_MessageUpdated;

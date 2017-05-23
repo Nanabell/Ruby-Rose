@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.SetGame
 {
@@ -21,7 +22,7 @@ namespace RubyRose.Services.SetGame
 
         private async Task SetGame()
         {
-            _config = Map.Get<CoreConfig>();
+            _config = Provider.GetService<CoreConfig>();
             Logger.Info($"Set Game to: {_config.Game}");
             await Client.SetGameAsync(_config.Game);
         }

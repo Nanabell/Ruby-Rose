@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NLog;
 using RubyRose.Database.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.RoleSystem
 {
@@ -21,9 +22,9 @@ namespace RubyRose.Modules.RoleSystem
         private readonly MongoClient _mongo;
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        public LeaveCommand(IDependencyMap map)
+        public LeaveCommand(IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
         }
 
         [Command("Leave")]
@@ -40,7 +41,7 @@ namespace RubyRose.Modules.RoleSystem
             if (entitled.Any())
             {
                 var sb = new StringBuilder();
-                await ((SocketGuildUser) Context.User).RemoveRolesAsync(entitled, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
+                await ((SocketGuildUser)Context.User).RemoveRolesAsync(entitled, new RequestOptions { RetryMode = RetryMode.AlwaysRetry });
                 foreach (var role in entitled)
                 {
                     sb.AppendLine(role.Name);

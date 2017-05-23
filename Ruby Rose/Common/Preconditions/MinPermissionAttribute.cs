@@ -6,6 +6,7 @@ using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
 using RubyRose.RWBY.Entities.Player;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Common.Preconditions
 {
@@ -32,9 +33,9 @@ namespace RubyRose.Common.Preconditions
             _level = level;
         }
 
-        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IDependencyMap map)
+        public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command, IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
             var access = GetPermissionsAsync(_mongo, context, _level);
 
             return _level == AccessLevel.Special

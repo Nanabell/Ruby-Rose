@@ -6,6 +6,8 @@ using Discord.Commands;
 using MongoDB.Driver;
 using RubyRose.Database;
 using RubyRose.Database.Models;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Common.Preconditions
 {
@@ -14,9 +16,9 @@ namespace RubyRose.Common.Preconditions
         private static MongoClient _mongo;
 
         public override Task<PreconditionResult> CheckPermissions(ICommandContext context, CommandInfo command,
-            IDependencyMap map)
+            IServiceProvider provider)
         {
-            _mongo = map.Get<MongoClient>();
+            _mongo = provider.GetService<MongoClient>();
             var user = context.User as IGuildUser;
             if (user == null) return Task.FromResult(PreconditionResult.FromSuccess());
 

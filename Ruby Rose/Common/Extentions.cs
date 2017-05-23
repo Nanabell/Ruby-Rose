@@ -38,7 +38,7 @@ namespace RubyRose.Common
         }
 
         public static async Task<IEnumerable<CommandInfo>> CheckConditionsAsync(this IEnumerable<CommandInfo> commandInfos,
-            ICommandContext context, IDependencyMap map = null)
+            ICommandContext context, IServiceProvider map = null)
         {
             var ret = new List<CommandInfo>();
             foreach (var commandInfo in commandInfos)

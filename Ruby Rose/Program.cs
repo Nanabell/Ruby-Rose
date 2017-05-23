@@ -6,6 +6,7 @@ using NLog;
 using RubyRose.Services;
 using System.Threading.Tasks;
 using RubyRose.RWBY;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose
 {
@@ -57,15 +58,19 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
             Logger.Info("Connecting to MongoDb");
             var mongo = new MongoClient(config.Database.Mongo);
 
-            var map = new DependencyMap();
-            map.Add(client);
-            map.Add(mongo);
-            map.Add(config);
+            var services = new ServiceCollection()
+                .AddSingleton(client)
+                .AddSingleton(mongo)
+                .AddSingleton(config)
+                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false }))
+                .AddSingleton(Logger);
+
+            var provider = services.BuildServiceProvider();
 
             Logger.Info("Initializing Service Handler");
             GameBase.MongoClient = mongo;
             // ReSharper disable once ObjectCreationAsStatement
-            new ServiceHandler(map);
+            new ServiceHandler(provider);
 
             Logger.Info("Starting Login to Discord");
             await client.LoginAsync(TokenType.Bot, (config.IsMainBot ? config.Token.Main : config.Token.Dev));
@@ -75,7 +80,7 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
 
             Logger.Info("Initializing Command Handler");
             var handler = new CommandHandler();
-            await handler.Install(map);
+            await handler.Install(provider);
 
             await Task.Delay(-1);
         }
