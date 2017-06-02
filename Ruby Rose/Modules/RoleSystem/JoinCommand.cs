@@ -1,16 +1,13 @@
 ﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using MongoDB.Driver;
-using NLog;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Discord.WebSocket;
 using RubyRose.Database.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +16,6 @@ namespace RubyRose.Modules.RoleSystem
     [Name("Role System"), Group]
     public class JoinCommand : ModuleBase
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private readonly MongoClient _mongo;
 
         public JoinCommand(IServiceProvider provider)
@@ -32,90 +28,94 @@ namespace RubyRose.Modules.RoleSystem
         [MinPermission(AccessLevel.User), RequireAllowed, Ratelimit(4, 1, Measure.Minutes)]
         public async Task Join([Remainder] string input)
         {
-            var joinables = await _mongo.GetCollection<Joinables>(Context.Client).GetListAsync(Context.Guild);
             var names = input.ToLower().Split(' ');
+            var joinables = await _mongo.GetCollection<Joinables>(Context.Client).GetListAsync(Context.Guild);
+            var user = Context.User as SocketGuildUser;
+            if (user == null) throw new NullReferenceException(nameof(user));
 
-            var entitled = GetEntitled(joinables, names, Context.User as IGuildUser);
+            IUserMessage msg = null;
 
-            if (entitled.Any())
+            var embed = new EmbedBuilder
             {
-                var sb = new StringBuilder();
-                await ((SocketGuildUser)Context.User).AddRolesAsync(entitled);
-                foreach (var role in entitled)
-                {
-                    sb.AppendLine(role.Name);
-                }
-                await Context.Channel.SendEmbedAsync(Embeds.Success("Added to", sb.ToString()));
-            }
-            else
+                Title = "Joining Roles",
+                Color = new Color(user.GetColorFromUser()),
+                Description = "```diff\n"
+            };
+
+            var _ = Task.Run(async () =>
             {
-                await Context.ReplyAsync(
-                    ":warning: Unable to add to any Role. Either invalid input or you already have them");
-            }
-        }
-
-        private static ICollection<IRole> GetEntitled(ICollection<Joinables> joinables, ICollection<string> names, IGuildUser user)
-        {
-            var entitled = new List<IRole>();
-            var userRoles = user.GetRoles().ToList();
-            var guild = user.Guild;
-
-            if (names.Contains("all"))
-                return GetAllEntitled(joinables, user);
-
-            foreach (var name in names)
-            {
-                var joinable = joinables.FirstOrDefault(join => join.Name == name);
-
-                if (userRoles.Any(role => role.Id == joinable.RoleId))
-                    continue;
-                if (joinable == null) continue;
-
-                var sameLevel = joinables.Where(join => join.Level == joinable.Level);
-                var skip = false;
-                foreach (var join in sameLevel)
+                if (names.Contains("all"))
                 {
-                    if (userRoles.Any(role => role.Id == join.RoleId))
-                        skip = true;
-                }
-                if (skip)
-                    continue;
+                    foreach (var joinable in joinables.Where(joinable => joinable.Level == 0))
+                    {
+                        var role = user.Guild.GetRole(joinable.RoleId);
 
-                try
-                {
-                    entitled.Add(guild.GetRole(joinable.RoleId));
+                        if (user.Roles.All(userRole => userRole.Id != role.Id))
+                        {
+                            if (msg == null)
+                                msg = await Context.ReplyAsync($"Adding requested roles. This may take a while please be patient.");
+                            embed.Description += $"+ {role}\n";
+                            await user.AddRoleAsync(role);
+                            await Task.Delay(1000);
+                        }
+                        else
+                        {
+                            embed.Description += $"- {role} | you already have the role\n";
+                        }
+                    }
                 }
-                catch (Exception e)
+                else
                 {
-                    Logger.Warn(e, "Failed to add Role to entitled RoleList");
-                }
-            }
-            return entitled;
-        }
+                    foreach (var name in names)
+                    {
+                        if (joinables.Any(joinable => joinable.Name == name))
+                        {
+                            var first = joinables.First(joinable => joinable.Name == name);
+                            var equalLevel = joinables.Where(joinable => joinable.Level != 0 && joinable.Level == first.Level);
+                            var role = user.Guild.GetRole(first.RoleId);
 
-        private static ICollection<IRole> GetAllEntitled(IEnumerable<Joinables> joinables, IGuildUser user)
-        {
-            var entitled = new List<IRole>();
-            var userRoles = user.GetRoles().ToList();
-            var guild = user.Guild;
+                            if (role != null)
+                            {
+                                if (user.Roles.All(userRole => userRole.Id != role.Id))
+                                {
+                                    if (!user.Roles.Any(userRole => equalLevel.Any(joinable => userRole.Id == joinable.RoleId)))
+                                    {
+                                        if (msg == null)
+                                            msg = await Context.ReplyAsync($"Adding requested roles. This may take a while please be patient.");
+                                        embed.Description += $"+ {role}\n";
+                                        await user.AddRoleAsync(role);
+                                        await Task.Delay(1000);
+                                    }
+                                    else
+                                    {
+                                        var sameLvlRole =
+                                            user.Roles.First(
+                                                socketRole => equalLevel.Any(joinable => joinable.RoleId == socketRole.Id));
+                                        embed.Description += $"- {role} | you already have {sameLvlRole}\n";
+                                    }
+                                }
+                                else
+                                {
+                                    embed.Description += $"- {role} | you already have the role\n";
+                                }
+                            }
+                            else
+                            {
+                                embed.Description += $"- {name} | Role no longer existent in guild";
+                            }
 
-            foreach (var joinable in joinables)
-            {
-                if (userRoles.Any(role => role.Id == joinable.RoleId))
-                    continue;
-                if (joinable.Level > 0)
-                    continue;
-
-                try
-                {
-                    entitled.Add(guild.GetRole(joinable.RoleId));
+                        }
+                        else
+                        {
+                            embed.Description += $"- {name} | Role not found\n";
+                        }
+                    }
                 }
-                catch (Exception e)
-                {
-                    Logger.Warn(e, "Failed to add Role to entitled RoleList");
-                }
-            }
-            return entitled;
+                embed.Description += "```";
+                if (msg != null)
+                    await msg.DeleteAsync();
+                await Context.ReplyAsync(embed);
+            });
         }
     }
 }
