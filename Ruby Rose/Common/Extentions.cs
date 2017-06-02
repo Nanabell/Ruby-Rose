@@ -50,10 +50,10 @@ namespace RubyRose.Common
             return ret;
         }
 
-        public static async Task ReplyAsync(this ICommandContext context, string message, bool mention = true)
+        public static async Task<IUserMessage> ReplyAsync(this ICommandContext context, string message, bool mention = true)
             => await context.Channel.SendMessageAsync($"{(mention ? context.User.Mention + ", " : "")}{message}");
 
-        public static async Task ReplyAsync(this ICommandContext context, Embed embed)
+        public static async Task<IUserMessage> ReplyAsync(this ICommandContext context, Embed embed)
             => await context.Channel.SendMessageAsync(string.Empty, embed: embed);
 
         public static async Task<IUserMessage> SendEmbedAsync(this IMessageChannel channel, EmbedBuilder builder)
