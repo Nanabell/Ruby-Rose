@@ -17,12 +17,9 @@ namespace RubyRose.Common.TypeReaders
         {
             var result = _service.Search(context, input);
 
-            if (result.IsSuccess)
-            {
-                return Task.FromResult(TypeReaderResult.FromSuccess(result.Commands.FirstOrDefault().Command));
-            }
-            else
-                return Task.FromResult(TypeReaderResult.FromError(CommandError.ParseFailed, $"Command {input} not found"));
+            return Task.FromResult(result.IsSuccess
+                ? TypeReaderResult.FromSuccess(result.Commands.FirstOrDefault().Command)
+                : TypeReaderResult.FromError(CommandError.ParseFailed, $"Command {input} not found"));
         }
     }
 }
