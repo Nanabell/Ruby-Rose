@@ -24,7 +24,7 @@ namespace RubyRose.Modules.Logging
             _mongo = provider.GetService<MongoClient>();
         }
 
-        [Command("ChannelLogs")]
+        [Command("ChannelLogs"), Alias("CLogs")]
         [MinPermission(AccessLevel.ServerAdmin)]
         public async Task Invoke(IMessageChannel channel = null, int count = 1000)
         {
