@@ -1,8 +1,6 @@
 ﻿using Discord.Commands;
-using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
-using RubyRose.Services.RwbyFight;
 using System.Threading.Tasks;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
@@ -30,13 +28,12 @@ namespace RubyRose.Modules.Moderation
             public async Task On()
             {
                 var allsettings = _mongo.GetCollection<Settings>(Context.Client);
-                var settings = await allsettings.GetByGuildAsync(Context.Guild);
+                var settings = await allsettings.GetByGuildAsync(Context.Guild.Id);
 
                 if (!settings.RwbyFight)
                 {
                     settings.RwbyFight = true;
                     await allsettings.SaveAsync(settings);
-                    await RwbyFightService.ReloadRwbyFight(Context.Client as DiscordSocketClient, _mongo);
                     await Context.ReplyAsync("Rwby Fight has been Enabled!");
                 }
                 else await Context.ReplyAsync("Rwby Fight is already Enabled");
@@ -47,13 +44,12 @@ namespace RubyRose.Modules.Moderation
             public async Task Off()
             {
                 var allsettings = _mongo.GetCollection<Settings>(Context.Client);
-                var settings = await allsettings.GetByGuildAsync(Context.Guild);
+                var settings = await allsettings.GetByGuildAsync(Context.Guild.Id);
 
                 if (settings.RwbyFight)
                 {
                     settings.RwbyFight = false;
                     await allsettings.SaveAsync(settings);
-                    await RwbyFightService.ReloadRwbyFight(Context.Client as DiscordSocketClient, _mongo);
                     await Context.ReplyAsync("Rwby Fight has been Disabled!");
                 }
                 else await Context.ReplyAsync("Rwby Fight is already Disabled");

@@ -1,48 +1,44 @@
-﻿using Discord.WebSocket;
-using MongoDB.Driver;
-using RubyRose.Database;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
+using Discord.WebSocket;
+using MongoDB.Driver;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
-using RubyRose.Common;
-using RubyRose.Database.Models;
+using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
+using NLog;
+using RubyRose.Common;
+using RubyRose.Database;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Services.RwbyFight
 {
-    public class RwbyFightService : ServiceBase
+    public class RwbyFightService
     {
-        private readonly Weiss _weissFirst = new Weiss();
-        private readonly Ruby _rubyFirst = new Ruby();
-        private static readonly ConcurrentDictionary<ulong, bool> IsRwbyFight = new ConcurrentDictionary<ulong, bool>();
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly DiscordSocketClient _client;
+        private readonly MongoClient _mongo;
+        private readonly ConcurrentDictionary<ulong, bool> _ruby = new ConcurrentDictionary<ulong, bool>();
+        private readonly ConcurrentDictionary<ulong, bool> _weiss = new ConcurrentDictionary<ulong, bool>();
 
-        protected override Task PreDisable()
+        public RwbyFightService(IServiceProvider provider)
         {
-            Client.MessageReceived -= Client_MessageReceived;
+            _client = provider.GetService<DiscordSocketClient>();
+            _mongo = provider.GetService<MongoClient>();
+        }
+
+        internal Task StartService()
+        {
+            _client.MessageReceived += Client_MessageReceived;
+            
             return Task.CompletedTask;
         }
-
-        protected override async Task PreEnable()
-        {
-            await ReloadRwbyFight(Client, Provider.GetService<MongoClient>());
-            Client.MessageReceived += Client_MessageReceived;
-        }
-
-        protected override bool WaitForReady()
-            => true;
-
-        public static async Task ReloadRwbyFight(DiscordSocketClient client, MongoClient mongo)
-        {
-            var allSettings = await mongo.GetCollection<Settings>(Client).Find("{}").ToListAsync();
-
-            foreach (var settings in allSettings)
-                IsRwbyFight.AddOrUpdate(settings.GuildId, settings.RwbyFight, (key, oldvalue) => settings.RwbyFight);
-        }
-
+        
+        
+        
         private async Task Client_MessageReceived(SocketMessage arg)
         {
             if (arg is SocketUserMessage message)
@@ -51,104 +47,59 @@ namespace RubyRose.Services.RwbyFight
                 {
                     if (message.Channel.CheckChannelPermission(ChannelPermission.AttachFiles, user.Guild.CurrentUser))
                     {
-                        if (IsRwbyFight.TryGetValue(user.Guild.Id, out var isEnabled))
+                        var context = new CommandContext(_client, message);
+                        if (Regex.IsMatch(context.Message.Content, "<:Heated2:\\d+>"))
                         {
-                            if (isEnabled)
+                            if (_weiss.TryGetValue(context.Channel.Id, out var isWeiss))
                             {
-                                if (Regex.IsMatch(message.Content, "<:Heated2:\\d+>"))
+                                if (isWeiss)
                                 {
-                                    if (_weissFirst.TryGet(message.Channel.Id))
-                                        await PostImage(message.Channel);
-                                    else
-                                        _rubyFirst.TryAdd(message.Channel.Id);
-                                }
-                                else if (Regex.IsMatch(arg.Content, "<:Heated1:\\d+>"))
-                                {
-                                    if (_rubyFirst.TryGet(message.Channel.Id))
-                                        await PostImage(message.Channel);
-                                    else
-                                        _weissFirst.TryAdd(message.Channel.Id);
+                                    await TryPostImage(context);
                                 }
                                 else
                                 {
-                                    _weissFirst.TryRemove(message.Channel.Id);
-                                    _rubyFirst.TryRemove(message.Channel.Id);
+                                    _ruby.TryAdd(context.Channel.Id, true);
                                 }
                             }
+                        }
+                        else if (Regex.IsMatch(context.Message.Content, "<:Heated1:\\d+>"))
+                        {
+                            if (_ruby.TryGetValue(context.Channel.Id, out var isRuby))
+                            {
+                                if (isRuby)
+                                {
+                                    await TryPostImage(context);
+                                }
+                                else
+                                {
+                                    _weiss.TryAdd(context.Channel.Id, true);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            _weiss.TryRemove(context.Channel.Id, out var _);
+                            _ruby.TryRemove(context.Channel.Id, out var _);
                         }
                     }
                 }
             }
         }
 
-        private async Task PostImage(ISocketMessageChannel channel)
+        private async Task TryPostImage(ICommandContext context)
         {
-            var direc = new DirectoryInfo(Assembly.GetEntryAssembly().Location);
-            do
+            var settings = await _mongo.GetCollection<Settings>(_client).GetByGuildAsync(context.Guild.Id);
+            if (settings.RwbyFight)
             {
-                direc = direc.Parent;
+                var direc = new DirectoryInfo(Assembly.GetEntryAssembly().Location);
+                do
+                    direc = direc.Parent;
+                while (direc.Name != "Ruby Rose");
+                _logger.Info("Triggered Rwby Fight Gif");
+                await context.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
             }
-            while (direc.Name != "Ruby Rose");
-            Logger.Info("Triggered Rwby Fight Gif");
-            await channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
-            _weissFirst.TryRemove(channel.Id);
-            _rubyFirst.TryRemove(channel.Id);
         }
-    }
-
-    public class Ruby
-    {
-        internal List<ulong> RubyFirst = new List<ulong>();
-
-        public bool TryGet(ulong channel)
-         => RubyFirst.Contains(channel);
-
-        public bool TryAdd(ulong channel)
-        {
-            if (!RubyFirst.Contains(channel))
-            {
-                RubyFirst.Add(channel);
-                return true;
-            }
-            else return false;
-        }
-
-        public bool TryRemove(ulong channel)
-        {
-            if (RubyFirst.Contains(channel))
-            {
-                RubyFirst.Remove(channel);
-                return true;
-            }
-            else return false;
-        }
-    }
-
-    public class Weiss
-    {
-        internal List<ulong> WeissFirst = new List<ulong>();
-
-        public bool TryGet(ulong channel)
-         => WeissFirst.Contains(channel);
-
-        public bool TryAdd(ulong channel)
-        {
-            if (!WeissFirst.Contains(channel))
-            {
-                WeissFirst.Add(channel);
-                return true;
-            }
-            else return false;
-        }
-
-        public bool TryRemove(ulong channel)
-        {
-            if (WeissFirst.Contains(channel))
-            {
-                WeissFirst.Remove(channel);
-                return true;
-            }
-            else return false;
-        }
+        
+        
     }
 }
