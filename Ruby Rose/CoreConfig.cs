@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using RubyRose.Database;
 using System.IO;
 
 namespace RubyRose
@@ -15,23 +14,14 @@ namespace RubyRose
         [JsonProperty("is-main-bot")]
         public bool IsMainBot { get; set; } = true;
 
-        [JsonProperty("tokens")]
-        public Tokens Token { get; set; } = new Tokens();
+        [JsonProperty("token")]
+        public string Token { get; set; } = "INSERT TOKEN HERE. DO !N!!OT!! MAKE THIS PUBLIC";
 
-        [JsonProperty("databases")]
-        public Databases Database { get; set; } = new Databases();
+        [JsonProperty("mongodb-connectionString")]
+        public string MongoConnectionString { get; set; } = "mongodb://Username:Password@localhost";
 
-        [JsonProperty("is-sharded")]
-        public bool IsSharded { get; set; }
-
-        [JsonProperty("shard-count")]
-        public int TotalShards { get; set; } = 1;
-
-        [JsonProperty("owner-ids")]
-        public ulong[] OwnerIds { get; set; } = new ulong[0];
-
-        [JsonProperty("fallback-name")]
-        public string FallbackName { get; set; }
+        [JsonProperty("version-nr")]
+        public double Version { get; set; } = 1.0;
 
         public static CoreConfig ReadConfig()
         {
@@ -44,25 +34,7 @@ namespace RubyRose
             var jsonstring = File.ReadAllText("config.json");
             var config = JsonConvert.DeserializeObject<CoreConfig>(jsonstring);
 
-            if (config.FallbackName != null)
-                DatabaseExtentions.LoadFallbackName(config.FallbackName);
-
             return config;
         }
-    }
-
-    public class Databases
-    {
-        [JsonProperty("mongo")]
-        public string Mongo { get; set; } = "Connectionstring to MongoDatabase";
-    }
-
-    public class Tokens
-    {
-        [JsonProperty("main")]
-        public string Main { get; set; } = "Main Bot Token";
-
-        [JsonProperty("dev")]
-        public string Dev { get; set; } = "OPTIONAL Test Bot Token";
     }
 }
