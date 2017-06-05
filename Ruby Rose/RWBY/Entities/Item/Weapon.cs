@@ -151,13 +151,13 @@ namespace RubyRose.RWBY.Entities.Item
 
         private async Task InsertWeaponAsync()
         {
-            var allWeapons = MongoClient.GetCollection<Weapon>();
+            var allWeapons = MongoClient.GetCollection<Weapon>(Client);
             await allWeapons.InsertOneAsync(this);
         }
 
         private static async Task InsertWeaponAsync(Weapon weapon)
         {
-            var allWeapons = MongoClient.GetCollection<Weapon>();
+            var allWeapons = MongoClient.GetCollection<Weapon>(Client);
             await allWeapons.InsertOneAsync(weapon);
         }
 

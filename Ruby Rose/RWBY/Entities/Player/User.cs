@@ -45,7 +45,7 @@ namespace RubyRose.RWBY.Entities.Player
         /// <param name="userId">UserId of the User</param>
         /// <returns>Database User</returns>
         public static async Task<User> GetUserAsync(ulong userId)
-            => await MongoClient.GetCollection<User>().FirstOrDefaultAsync(user => user.UserId == userId);
+            => await MongoClient.GetCollection<User>(Client).FirstOrDefaultAsync(user => user.UserId == userId);
 
         /// <summary>
         /// Load all Users from the Database into local Memory.
@@ -53,7 +53,7 @@ namespace RubyRose.RWBY.Entities.Player
         /// <returns></returns>
         public static async Task LoadUsersAsync()
         {
-            var allUsers = await MongoClient.GetCollection<User>().All();
+            var allUsers = await MongoClient.GetCollection<User>(Client).All();
             Users.AddRange(allUsers);
         }
 
@@ -65,7 +65,7 @@ namespace RubyRose.RWBY.Entities.Player
         {
             if (Id != ObjectId.Empty)
             {
-                var allUsers = MongoClient.GetCollection<User>();
+                var allUsers = MongoClient.GetCollection<User>(Client);
                 await allUsers.SaveAsync(this);
             }
             else
@@ -80,7 +80,7 @@ namespace RubyRose.RWBY.Entities.Player
         /// <returns></returns>
         public static async Task SaveUsersAsync()
         {
-            var allUsers = MongoClient.GetCollection<User>();
+            var allUsers = MongoClient.GetCollection<User>(Client);
 
             foreach (var user in Users)
             {
@@ -97,13 +97,13 @@ namespace RubyRose.RWBY.Entities.Player
 
         private async Task InsertUserAsync()
         {
-            var allUsers = MongoClient.GetCollection<User>();
+            var allUsers = MongoClient.GetCollection<User>(Client);
             await allUsers.InsertOneAsync(this);
         }
 
         private static async Task InsertUserAsync(User user)
         {
-            var allUsers = MongoClient.GetCollection<User>();
+            var allUsers = MongoClient.GetCollection<User>(Client);
             await allUsers.InsertOneAsync(user);
         }
 
