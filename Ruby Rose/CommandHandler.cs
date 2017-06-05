@@ -6,7 +6,6 @@ using NLog;
 using RubyRose.Common.TypeReaders;
 using RubyRose.Database;
 using System;
-using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading.Tasks;
 using RubyRose.Common;
@@ -17,106 +16,97 @@ namespace RubyRose
 {
     public class CommandHandler
     {
-        private static readonly ConcurrentDictionary<ulong, bool> ResultAnnounce = new ConcurrentDictionary<ulong, bool>();
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private DiscordSocketClient _client;
-        private CommandService _commandService;
-        private IServiceProvider _provider;
-        private CoreConfig _config;
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        private readonly DiscordSocketClient _client;
+        private readonly MongoClient _mongo;
+        private readonly CommandService _commandService;
+        private readonly IServiceProvider _provider;
+        private readonly CoreConfig _config;
 
-        public async Task HandleCommand(SocketMessage parameterMessage)
+        public CommandHandler(IServiceProvider provider)
+        {
+            _commandService = provider.GetService<CommandService>();
+            _client = provider.GetService<DiscordSocketClient>();
+            _mongo = provider.GetService<MongoClient>();
+            _config = provider.GetService<CoreConfig>();
+            _provider = provider;
+
+            _logger.Info("Loading TypeReaders");
+            _commandService.AddTypeReader<CommandInfo>(new CommandInfoTypeReader(_commandService));
+            _commandService.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
+
+            _client.MessageReceived += HandleCommand;
+        }
+
+        internal async Task StartServiceAsync()
+        {
+            _logger.Info("Loading Modules from Assembly");
+            await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
+            _logger.Info("CommandHandler started");
+        }
+
+        public async Task HandleCommand(SocketMessage socketMessage)
         {
             var argPos = 0;
-            var message = parameterMessage as SocketUserMessage;
-            var author = message?.Author as SocketGuildUser;
 
-            var context = new CommandContext(_client, message);
-
-            if (message == null)
-                return;
-            if (message.Content == _config.Prefix)
-                return;
-            if (author == null)
-                return;
-            if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) || message.HasStringPrefix(_config.Prefix, ref argPos)))
-                return;
-            if (!context.Channel.CheckChannelPermission(ChannelPermission.SendMessages, await context.Guild.GetCurrentUserAsync()))
-                return;
-
-            await Task.Run(async () =>
+            if (socketMessage is SocketUserMessage message)
             {
-                try
+                if (message.Author is SocketGuildUser)
                 {
-                    var result = await _commandService.ExecuteAsync(context, argPos, _provider);
+                    var context = new CommandContext(_client, message);
 
-                    Logger.Info($"Command ran by {context.User} in {context.Guild.Name} - {context.Message.Content}");
+                    if (message.Content == _config.Prefix)
+                        return;
+                    if (!(message.HasMentionPrefix(_client.CurrentUser, ref argPos) ||
+                          message.HasStringPrefix(_config.Prefix, ref argPos)))
+                        return;
+                    if (!context.Channel.CheckChannelPermission(ChannelPermission.SendMessages,
+                        await context.Guild.GetCurrentUserAsync()))
+                        return;
 
-                    if (!result.IsSuccess)
+                    var _ = Task.Run(async () =>
                     {
-                        Logger.Warn($"Command failed to run successfully. {result.ErrorReason}");
+                        var result = await _commandService.ExecuteAsync(context, argPos, _provider);
 
-                        ResultAnnounce.TryGetValue(context.Guild.Id, out var isEnabled);
-                        if (isEnabled)
+                        if (!result.IsSuccess)
                         {
+                            _logger.Warn($"Command failed to run successfully. {result.ErrorReason}");
+
                             string response = null;
                             switch (result)
                             {
-                                case SearchResult _:
+                                case SearchResult searchResult:
+                                    if (!searchResult.IsSuccess)
+                                        _logger.Debug(searchResult.Error);
+                                    else
+                                        _logger.Info(searchResult.Text);
                                     break;
 
                                 case ParseResult parseResult:
-                                    response = $":warning: There was an error parsing your command: `{parseResult.ErrorReason}`";
+                                    response =
+                                        $":warning: There was an error parsing your command: `{parseResult.ErrorReason}`";
                                     break;
 
                                 case PreconditionResult preconditionResult:
-                                    response = $":warning: A precondition of your command failed: `{preconditionResult.ErrorReason}`";
+                                    response =
+                                        $":warning: A precondition of your command failed: `{preconditionResult.ErrorReason}`";
                                     break;
 
                                 case ExecuteResult executeResult:
-                                    response = $":warning: Your command failed to execute. If this persists, contact the Bot Developer.\n`{executeResult.Exception.Message}`";
-                                    Logger.Error(executeResult.Exception);
+                                    response =
+                                        $":warning: Your command failed to execute. If this persists, contact the Bot Developer.\n`{executeResult.Exception.Message}`";
+                                    _logger.Error(executeResult.Exception);
                                     break;
                             }
+                            var settings = await _mongo.GetCollection<Settings>(_client)
+                                .GetByGuildAsync(context.Guild.Id);
 
-                            if (response != null)
+                            if (response != null && settings.IsErrorReporting)
                                 await context.ReplyAsync(response);
                         }
-                        else Logger.Warn("Suppressing Result on behalf of settings");
-                    }
+                    });
                 }
-                catch (Exception e)
-                {
-                    Logger.Error(e, "Something went wrong Executing a Command");
-                }
-            });
-        }
-
-        public static async Task ReloadResultAnnounce(DiscordSocketClient client, MongoClient mongo)
-        {
-            var allSettings = await mongo.GetCollection<Settings>(client).Find("{}").ToListAsync();
-
-            foreach (var settings in allSettings)
-                ResultAnnounce.AddOrUpdate(settings.GuildId, settings.ResultAnnounce, (key, oldvalue) => settings.ResultAnnounce);
-        }
-
-        public async Task Install(IServiceProvider provider)
-        {
-            Logger.Debug("Creating new CommandService");
-            _commandService = provider.GetService<CommandService>();
-            Logger.Trace("Adding TypeReaders to CommandService");
-            _commandService.AddTypeReader<CommandInfo>(new CommandInfoTypeReader(_commandService));
-            _commandService.AddTypeReader<IAttachment>(new AttachmentsTypeReader());
-            _client = provider.GetService<DiscordSocketClient>();
-            _config = provider.GetService<CoreConfig>();
-            _provider = provider;
-            await ReloadResultAnnounce(_client, provider.GetService<MongoClient>());
-
-            Logger.Debug("Loading Modules from Entry Assembly");
-            await _commandService.AddModulesAsync(Assembly.GetEntryAssembly());
-
-            Logger.Info("Starting CommandHandler");
-            _commandService.Log += Program.Logging;
-            _client.MessageReceived += HandleCommand;
+            }
         }
     }
 }
