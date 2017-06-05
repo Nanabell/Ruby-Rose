@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using RubyRose.Database;
@@ -6,95 +7,101 @@ using RubyRose.Database.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.Logging
 {
-    public class LoggingService
+    public class MessageLoggingService
     {
-        private static MongoClient _mongo;
+        private readonly DiscordSocketClient _client;
+        private readonly MongoClient _mongo;
 
-        protected override Task PreDisable()
+        public MessageLoggingService(IServiceProvider provider)
         {
-            Client.MessageReceived -= Client_MessageReceived;
-            Client.MessageUpdated -= Client_MessageUpdated;
-            Client.MessageDeleted -= Client_MessageDeleted;
+            _client = provider.GetService<DiscordSocketClient>();
+            _mongo = provider.GetService<MongoClient>();
+        }
 
+        internal Task StartLogging()
+        {
+            _client.MessageReceived += Client_MessageReceived;
+            _client.MessageUpdated += Client_MessageUpdated;
+            _client.MessageDeleted += Client_MessageDeleted;
+            
             return Task.CompletedTask;
         }
-
-        protected override Task PreEnable()
+        
+        private Task Client_MessageDeleted(Cacheable<IMessage, ulong> arg, ISocketMessageChannel channel)
         {
-            _mongo = Provider.GetService<MongoClient>();
-
-            Client.MessageReceived += Client_MessageReceived;
-            Client.MessageUpdated += Client_MessageUpdated;
-            Client.MessageDeleted += Client_MessageDeleted;
-
-            return Task.CompletedTask;
-        }
-
-        private static async Task Client_MessageDeleted(Cacheable<IMessage, ulong> arg, ISocketMessageChannel channel)
-        {
-            var removedMessage = await arg.GetOrDownloadAsync();
-            if (removedMessage is SocketUserMessage message)
+            Task.Run(async () =>
             {
-                if (message.Author is SocketGuildUser user)
+                var removedMessage = await arg.GetOrDownloadAsync();
+                if (removedMessage is SocketUserMessage message)
                 {
-                    var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(Client);
-                    var messageLogging = await allMessageLoggings.GetByMessageIdAsyc(user.Guild, message.Id);
-
-                    messageLogging.IsDeleted = true;
-
-                    await allMessageLoggings.SaveAsync(messageLogging);
-                }
-            }
-        }
-
-        private static async Task Client_MessageUpdated(Cacheable<IMessage, ulong> oldMessage, SocketMessage newMessage, ISocketMessageChannel channel)
-        {
-            if (newMessage is SocketUserMessage message)
-            {
-                if (message.Author is SocketGuildUser user)
-                {
-                    var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(Client);
-                    var messageLogging = await allMessageLoggings.GetByMessageIdAsyc(user.Guild, message.Id);
-
-                    messageLogging.IsEdited = true;
-                    messageLogging.Edits.Add(message.Content);
-
-                    await allMessageLoggings.SaveAsync(messageLogging);
-                }
-            }
-        }
-
-        private static async Task Client_MessageReceived(SocketMessage arg)
-        {
-            if (arg is SocketUserMessage message)
-            {
-                if (message.Author is SocketGuildUser user)
-                {
-                    var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(Client);
-
-                    var newMessage = new MessageLoggings
+                    if (message.Author is SocketGuildUser user)
                     {
-                        GuildId = user.Guild.Id,
-                        ChannelId = message.Channel.Id,
-                        UserId = user.Id,
-                        MessageId = message.Id,
-                        Timestamp = message.Timestamp.UtcDateTime,
-                        Content = message.Content,
-                        IsEdited = false,
-                        Edits = new List<string>(),
-                        IsDeleted = false,
-                        AttachmentUrls = new List<string>(message.Attachments.Select(x => x.Url))
-                    };
+                        var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(_client);
+                        var messageLogging = await allMessageLoggings.GetByMessageIdAsyc(user.Guild, message.Id);
 
-                    await allMessageLoggings.InsertOneAsync(newMessage);
+                        messageLogging.IsDeleted = true;
+
+                        await allMessageLoggings.SaveAsync(messageLogging);
+                    }
                 }
-            }
+            }).ConfigureAwait(false);
+            return Task.CompletedTask;
         }
 
-        protected override bool WaitForReady()
-            => true;
+        private Task Client_MessageUpdated(Cacheable<IMessage, ulong> oldMessage, IDeletable newMessage, ISocketMessageChannel channel)
+        {
+            Task.Run(async () =>
+            {
+                if (newMessage is SocketUserMessage message)
+                {
+                    if (message.Author is SocketGuildUser user)
+                    {
+                        var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(_client);
+                        var messageLogging = await allMessageLoggings.GetByMessageIdAsyc(user.Guild, message.Id);
+
+                        messageLogging.IsEdited = true;
+                        messageLogging.Edits.Add(message.Content);
+
+                        await allMessageLoggings.SaveAsync(messageLogging);
+                    }
+                }
+            }).ConfigureAwait(false);
+            return Task.CompletedTask;
+        }
+
+        private Task Client_MessageReceived(IDeletable arg)
+        {
+            Task.Run(async () =>
+            {
+                if (arg is SocketUserMessage message)
+                {
+                    if (message.Author is SocketGuildUser user)
+                    {
+                        var allMessageLoggings = _mongo.GetCollection<MessageLoggings>(_client);
+
+                        var newMessage = new MessageLoggings
+                        {
+                            GuildId = user.Guild.Id,
+                            ChannelId = message.Channel.Id,
+                            UserId = user.Id,
+                            MessageId = message.Id,
+                            Timestamp = message.Timestamp.UtcDateTime,
+                            Content = message.Content,
+                            IsEdited = false,
+                            Edits = new List<string>(),
+                            IsDeleted = false,
+                            AttachmentUrls = new List<string>(message.Attachments.Select(x => x.Url))
+                        };
+
+                        await allMessageLoggings.InsertOneAsync(newMessage);
+                    }
+                }
+            }).ConfigureAwait(false);
+            return Task.CompletedTask;
+        }
     }
 }
