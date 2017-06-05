@@ -1,10 +1,8 @@
-﻿using Discord.Commands;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
+using Discord.Commands;
 
-namespace RubyRose.Modules.Owner
+namespace RubyRose.Modules.System
 {
     [Name("System")]
     public class ShutdownCommand : ModuleBase

@@ -6,11 +6,10 @@ using RubyRose.Database.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Services.Logging
 {
-    public class LoggingService : ServiceBase
+    public class LoggingService
     {
         private static MongoClient _mongo;
 
