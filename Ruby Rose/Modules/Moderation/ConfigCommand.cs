@@ -2,8 +2,6 @@
 using MongoDB.Driver;
 using RubyRose.Database;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
@@ -26,9 +24,9 @@ namespace RubyRose.Modules.Moderation
         [MinPermission(AccessLevel.ServerModerator)]
         public async Task Config()
         {
-            var settings = await _mongo.GetCollection<Settings>(Context.Client).GetByGuildAsync(Context.Guild);
+            var settings = await _mongo.GetCollection<Settings>(Context.Client).GetByGuildAsync(Context.Guild.Id);
 
-            await Context.ReplyAsync($"Current Settings for {Context.Guild.Name}\n{settings.ToString()}");
+            await Context.ReplyAsync($"Current Settings for {Context.Guild.Name}\n{settings}");
         }
     }
 }
