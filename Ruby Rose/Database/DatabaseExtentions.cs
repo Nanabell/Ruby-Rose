@@ -6,27 +6,17 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using RubyRose.Database.Interfaces;
+using RubyRose.Database.Models;
 
 namespace RubyRose.Database
 {
     public static class DatabaseExtentions
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private static string _fallbackName;
 
-        public static void LoadFallbackName(string name)
+        public static IMongoCollection<T> GetCollection<T>(this MongoClient mongo, IDiscordClient client)
         {
-            _fallbackName = name;
-        }
-
-        public static IMongoCollection<T> GetCollection<T>(this MongoClient mongo, IDiscordClient client = null)
-        {
-            string dbName;
-            if (client?.CurrentUser == null)
-                dbName = _fallbackName ?? throw new ArgumentNullException(nameof(mongo));
-            else
-                dbName = client.CurrentUser.Username.Replace(" ", "");
-
+            var dbName = client.CurrentUser.Username.Replace(" ", "");
             Logger.Trace($"Connecting to Database {dbName}");
             var db = mongo.GetDatabase(dbName);
 
@@ -68,12 +58,6 @@ namespace RubyRose.Database
             return await cursor.ToListAsync();
         }
 
-        public static async Task<T> GetByGuildAsync<T>(this IMongoCollection<T> collection, IGuild guild) where T : IGuildFirstIndexed
-        {
-            var cursor = await collection.FindAsync(f => f.GuildId == guild.Id);
-            return await cursor.FirstOrDefaultAsync();
-        }
-
         public static async Task<T> GetByNameAsync<T>(this IMongoCollection<T> collection, string name) where T : INameIndexed
         {
             var cursor = await collection.FindAsync(f => f.Name == name);
@@ -99,6 +83,26 @@ namespace RubyRose.Database
         {
             var cursor = await collection.FindAsync(f => f.UserId == userId);
             return await cursor.FirstOrDefaultAsync();
+        }
+
+        public static async Task<Settings> GetByGuildAsync(this IMongoCollection<Settings> collection, ulong guildId)
+        {
+            var cursor = await collection.FindAsync(f => f.GuildId == guildId);
+            var result = await cursor.SingleOrDefaultAsync();
+
+            if (result != null)
+                return result;
+            var newSettings = new Settings(guildId);
+            await collection.InsertOneAsync(newSettings);
+
+            var secondCursor = await collection.FindAsync(f => f.GuildId == guildId);
+            return await secondCursor.SingleOrDefaultAsync();
+        }
+
+        public static async Task<List<Settings>> GetGuildsAsync(this IMongoCollection<Settings> collection)
+        {
+            var cursor = await collection.FindAsync("{}");
+            return await cursor.ToListAsync();
         }
 
 
