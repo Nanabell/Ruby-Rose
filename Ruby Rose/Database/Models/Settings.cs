@@ -10,7 +10,7 @@ namespace RubyRose.Database.Models
         {
             GuildId = guildId;
         }
-        
+
         public ObjectId Id { get; set; }
 
         public ulong GuildId { get; set; }
@@ -28,6 +28,7 @@ namespace RubyRose.Database.Models
             sb.AppendLine($"GuildId:         {GuildId}");
             sb.AppendLine($"Result Announce: {IsErrorReporting}");
             sb.AppendLine($"Rwby Fight:      {RwbyFight}");
+            sb.AppendLine("```");
             return sb.ToString();
         }
     }
