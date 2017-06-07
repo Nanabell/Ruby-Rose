@@ -50,6 +50,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Modules\Settings" />
     <Folder Include="RWBY\Commands\" />
+    <Folder Include="Services\RwbyFight" />
   </ItemGroup>
 </Project>
