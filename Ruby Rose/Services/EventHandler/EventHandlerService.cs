@@ -9,6 +9,7 @@ using NLog;
 using RubyRose.Database;
 using RubyRose.Database.Models;
 using RubyRose.Services.Logging;
+using RubyRose.Services.RwbyFight;
 
 namespace RubyRose.Services.EventHandler
 {
@@ -38,7 +39,7 @@ namespace RubyRose.Services.EventHandler
             _client.Ready += OnReady;
             _client.Log += OnLog;
             _commandService.Log += CommandServiceOnLog;
-            
+
             return Task.CompletedTask;
         }
 
@@ -60,21 +61,27 @@ namespace RubyRose.Services.EventHandler
                 case LogSeverity.Debug:
                     level = LogLevel.Info;
                     break;
+
                 case LogSeverity.Verbose:
                     level = LogLevel.Info;
                     break;
+
                 case LogSeverity.Info:
                     level = LogLevel.Info;
                     break;
+
                 case LogSeverity.Warning:
                     level = LogLevel.Warn;
                     break;
+
                 case LogSeverity.Error:
                     level = LogLevel.Error;
                     break;
+
                 case LogSeverity.Critical:
                     level = LogLevel.Fatal;
                     break;
+
                 default:
                     level = LogLevel.Off;
                     break;
@@ -97,21 +104,27 @@ namespace RubyRose.Services.EventHandler
                 case LogSeverity.Debug:
                     level = LogLevel.Trace;
                     break;
+
                 case LogSeverity.Verbose:
                     level = LogLevel.Debug;
                     break;
+
                 case LogSeverity.Info:
                     level = LogLevel.Info;
                     break;
+
                 case LogSeverity.Warning:
                     level = LogLevel.Warn;
                     break;
+
                 case LogSeverity.Error:
                     level = LogLevel.Error;
                     break;
+
                 case LogSeverity.Critical:
                     level = LogLevel.Fatal;
                     break;
+
                 default:
                     level = LogLevel.Off;
                     break;
@@ -131,15 +144,16 @@ namespace RubyRose.Services.EventHandler
             Logger.Info($"Set Game to: {_config.Game}");
             await _client.SetGameAsync(_config.Game);
 
-
             var _ = Task.Run(async () =>
             {
                 await Task.Delay(2000);
-                
+
                 var logging = new MessageLoggingService(_provider);
                 await logging.StartLogging();
-            }).ConfigureAwait(false);
 
+                var rwbyFight = new RwbyFightService(_provider);
+                await rwbyFight.StartService();
+            }).ConfigureAwait(false);
         }
 
         private static Task OnGuildAvailable(SocketGuild socketGuild)
