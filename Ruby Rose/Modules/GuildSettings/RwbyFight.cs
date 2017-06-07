@@ -1,17 +1,17 @@
-﻿using Discord.Commands;
-using MongoDB.Driver;
-using RubyRose.Database;
+﻿using System;
 using System.Threading.Tasks;
+using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
+using RubyRose.Database;
 using RubyRose.Database.Models;
-using System;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace RubyRose.Modules.Moderation
+namespace RubyRose.Modules.GuildSettings
 {
     [Name("Config")]
-    public class RwbyFightSettings : ModuleBase
+    public class RwbyFight : ModuleBase
     {
         [Name("RwbyFight"), Group("RwbyFight")]
         public class RwbyFightSettingsCommands : ModuleBase

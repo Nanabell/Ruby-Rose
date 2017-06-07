@@ -1,16 +1,16 @@
-﻿using Discord.Commands;
-using MongoDB.Driver;
-using RubyRose.Database;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using RubyRose.Common;
 using RubyRose.Common.Preconditions;
+using RubyRose.Database;
 using RubyRose.Database.Models;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace RubyRose.Modules.Moderation
+namespace RubyRose.Modules.GuildSettings
 {
-    [Name("Moderation")]
+    [Name("Config")]
     public class ConfigCommand : ModuleBase
     {
         private readonly MongoClient _mongo;

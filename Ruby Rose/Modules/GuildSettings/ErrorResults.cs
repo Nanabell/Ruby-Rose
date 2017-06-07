@@ -1,18 +1,16 @@
-﻿using Discord.Commands;
-using Discord.WebSocket;
+﻿using System;
+using System.Threading.Tasks;
+using Discord.Commands;
+using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using RubyRose.Common;
 using RubyRose.Common.Preconditions;
 using RubyRose.Database;
-using System.Threading.Tasks;
-using RubyRose.Common;
-using RubyRose.Database.Models;
-using System;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace RubyRose.Modules.Moderation
+namespace RubyRose.Modules.GuildSettings
 {
     [Name("Config")]
-    public class ResultAnnnounceSettings : ModuleBase
+    public class ErrorResults : ModuleBase
     {
         [Name("Errors"), Group("Errors")]
         public class ResultAnnounceSettingsCommands : ModuleBase
@@ -28,7 +26,7 @@ namespace RubyRose.Modules.Moderation
             [MinPermission(AccessLevel.ServerModerator)]
             public async Task On()
             {
-                var allsettings = _mongo.GetCollection<Settings>(Context.Client);
+                var allsettings = _mongo.GetCollection<Database.Models.Settings>(Context.Client);
                 var settings = await allsettings.GetByGuildAsync(Context.Guild.Id);
 
                 if (!settings.IsErrorReporting)
@@ -44,7 +42,7 @@ namespace RubyRose.Modules.Moderation
             [MinPermission(AccessLevel.ServerModerator)]
             public async Task Off()
             {
-                var allsettings = _mongo.GetCollection<Settings>(Context.Client);
+                var allsettings = _mongo.GetCollection<Database.Models.Settings>(Context.Client);
                 var settings = await allsettings.GetByGuildAsync(Context.Guild.Id);
 
                 if (settings.IsErrorReporting)
