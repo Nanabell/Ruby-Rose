@@ -1,12 +1,12 @@
-﻿using Discord.Commands;
-using NLog;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Discord.Commands;
+using NLog;
 
-namespace RubyRose.Modules.Owner
+namespace RubyRose.Modules.System
 {
     [Name("System")]
     public class RestoreCommand : ModuleBase

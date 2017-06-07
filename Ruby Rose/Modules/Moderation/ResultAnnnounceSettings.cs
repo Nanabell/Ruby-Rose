@@ -14,7 +14,7 @@ namespace RubyRose.Modules.Moderation
     [Name("Config")]
     public class ResultAnnnounceSettings : ModuleBase
     {
-        [Name("ResultAnnounce"), Group("ResultAnnounce")]
+        [Name("Errors"), Group("Errors")]
         public class ResultAnnounceSettingsCommands : ModuleBase
         {
             private readonly MongoClient _mongo;
@@ -29,16 +29,15 @@ namespace RubyRose.Modules.Moderation
             public async Task On()
             {
                 var allsettings = _mongo.GetCollection<Settings>(Context.Client);
-                var settings = await allsettings.GetByGuildAsync(Context.Guild);
+                var settings = await allsettings.GetByGuildAsync(Context.Guild.Id);
 
-                if (!settings.ResultAnnounce)
+                if (!settings.IsErrorReporting)
                 {
-                    settings.ResultAnnounce = true;
+                    settings.IsErrorReporting = true;
                     await allsettings.SaveAsync(settings);
-                    await CommandHandler.ReloadResultAnnounce(Context.Client as DiscordSocketClient, _mongo);
-                    await Context.ReplyAsync("Result Announce has been Enabled!");
+                    await Context.ReplyAsync("Error Message have been Enabled!");
                 }
-                else await Context.ReplyAsync("Result Announce is already Enabled");
+                else await Context.ReplyAsync("Error Message are already Enabled");
             }
 
             [Command("Disable"), Alias("Off, False, 0, No")]
@@ -46,16 +45,15 @@ namespace RubyRose.Modules.Moderation
             public async Task Off()
             {
                 var allsettings = _mongo.GetCollection<Settings>(Context.Client);
-                var settings = await allsettings.GetByGuildAsync(Context.Guild);
+                var settings = await allsettings.GetByGuildAsync(Context.Guild.Id);
 
-                if (settings.ResultAnnounce)
+                if (settings.IsErrorReporting)
                 {
-                    settings.ResultAnnounce = false;
+                    settings.IsErrorReporting = false;
                     await allsettings.SaveAsync(settings);
-                    await CommandHandler.ReloadResultAnnounce(Context.Client as DiscordSocketClient, _mongo);
-                    await Context.ReplyAsync("Result Announce has been Disabled!");
+                    await Context.ReplyAsync("Error Messages have been Disabled!");
                 }
-                else await Context.ReplyAsync("Result Announce is already Disabled");
+                else await Context.ReplyAsync("Error Messages are already Disabled");
             }
         }
     }

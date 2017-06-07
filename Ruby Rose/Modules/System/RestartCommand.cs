@@ -1,10 +1,10 @@
-﻿using Discord.Commands;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using Discord.Commands;
 
-namespace RubyRose.Modules.Owner
+namespace RubyRose.Modules.System
 {
     [Name("System")]
     public class RestartCommand : ModuleBase

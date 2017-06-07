@@ -101,7 +101,7 @@ namespace RubyRose.Common.Preconditions
         /// <summary> Period is measured in minutes. </summary>
         Minutes,
 
-        //// <summary> Period is measured in seconds. </summary>
+        /// <summary> Period is measured in seconds. </summary>
         Seconds
     }
 }

@@ -1,68 +1,72 @@
-﻿using Newtonsoft.Json;
-using RubyRose.Database;
+﻿using System;
+using Newtonsoft.Json;
 using System.IO;
+using NLog;
 
 namespace RubyRose
 {
     public class CoreConfig
     {
+        private static readonly Logger Logger = LogManager.GetLogger("Config");
+        
+        [JsonProperty("token")]
+        public string Token { get; set; } = "INSERT TOKEN HERE. DO NOT MAKE THIS PUBLIC";
+
+        [JsonProperty("command_on_mention")]
+        public bool TriggerOnMention { get; set; } = true;
+
         [JsonProperty("prefix")]
         public string Prefix { get; set; } = "!";
 
         [JsonProperty("game")]
         public string Game { get; set; } = "TestBot";
 
-        [JsonProperty("is-main-bot")]
-        public bool IsMainBot { get; set; } = true;
-
-        [JsonProperty("tokens")]
-        public Tokens Token { get; set; } = new Tokens();
-
-        [JsonProperty("databases")]
-        public Databases Database { get; set; } = new Databases();
-
-        [JsonProperty("is-sharded")]
-        public bool IsSharded { get; set; }
-
-        [JsonProperty("shard-count")]
-        public int TotalShards { get; set; } = 1;
-
-        [JsonProperty("owner-ids")]
-        public ulong[] OwnerIds { get; set; } = new ulong[0];
-
-        [JsonProperty("fallback-name")]
-        public string FallbackName { get; set; }
-
-        public static CoreConfig ReadConfig()
+        public class ConfigDatabase
         {
-            if (!File.Exists("config.json"))
-            {
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(new CoreConfig(), Formatting.Indented));
-                throw new FileNotFoundException("Config file Not Found - Generating new Template..");
-            }
+            [JsonProperty("host")]
+            public string Host { get; set; } = "localhost";
 
-            var jsonstring = File.ReadAllText("config.json");
-            var config = JsonConvert.DeserializeObject<CoreConfig>(jsonstring);
+            [JsonProperty("port")]
+            public int Port { get; set; } = 27017;
 
-            if (config.FallbackName != null)
-                DatabaseExtentions.LoadFallbackName(config.FallbackName);
+            [JsonProperty("db")]
+            public string Db { get; set; } = "admin";
 
-            return config;
+            [JsonProperty("user")]
+            public string Username { get; set; } = "user";
+
+            [JsonProperty("password")]
+            public string Password { get; set; } = "password";
+
+            [JsonIgnore]
+            public string ConnectionString => $"mongodb://{Username}:{Password}@{Host}:{Port}/{Db}";
         }
-    }
+        
+        [JsonProperty("MongoDb")]
+        public ConfigDatabase Database { get; set; } = new ConfigDatabase();
 
-    public class Databases
-    {
-        [JsonProperty("mongo")]
-        public string Mongo { get; set; } = "Connectionstring to MongoDatabase";
-    }
+        [JsonProperty("version-nr")]
+        public double Version { get; set; } = 1.0;
 
-    public class Tokens
-    {
-        [JsonProperty("main")]
-        public string Main { get; set; } = "Main Bot Token";
-
-        [JsonProperty("dev")]
-        public string Dev { get; set; } = "OPTIONAL Test Bot Token";
+        
+        public static CoreConfig Load()
+        {
+            Logger.Info("Loading Configuration from config.json");
+            if (File.Exists("config.json"))
+            {
+                var json = File.ReadAllText("config.json");
+                return JsonConvert.DeserializeObject<CoreConfig>(json);
+            }
+            var config = new CoreConfig();
+            config.Save();
+            throw new InvalidOperationException("configuration file created; insert token and restart.");
+        }
+        
+        public void Save()
+        {
+            Logger.Info("Saving Configuration to config.json");
+            var json = JsonConvert.SerializeObject(this, Formatting.Indented);
+            File.WriteAllText("config.json", json);
+        }
     }
 }

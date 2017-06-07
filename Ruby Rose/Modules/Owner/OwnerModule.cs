@@ -6,12 +6,20 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace RubyRose.Modules.Owner
 {
     [Name("Owner"), Group]
     public class OwnerModule : ModuleBase
     {
+        private readonly CoreConfig _config;
+
+        public OwnerModule(IServiceProvider provider)
+        {
+            _config = provider.GetService<CoreConfig>();
+        }
+
         [Command("BotInfo")]
         [RequireOwner]
         public async Task Info()
@@ -24,7 +32,7 @@ namespace RubyRose.Modules.Owner
                     $"- Author: {application.Owner.Username} (ID {application.Owner.Id})\n" +
                     $"- Library: Discord.Net ({DiscordConfig.Version})\n" +
                     $"- Uptime: {GetUptime()}\n" +
-                    "- Version: 1.6-BETA\n\n" +
+                    $"- Version: {_config.Version}\n\n" +
 
                     $"{Format.Bold("Stats")}\n" +
                     $"- Heap Size: {GetHeapSize()} MB\n" +
@@ -32,20 +40,6 @@ namespace RubyRose.Modules.Owner
                     $"- Channels: {discordSocketClient.Guilds.Sum(g => g.Channels.Count)}\n" +
                     $"- Users: {discordSocketClient.Guilds.Sum(g => g.Users.Count)}"
                 );
-        }
-
-        [Command("updateTags")]
-        [RequireOwner]
-        public async Task Test()
-        {
-            await Task.CompletedTask;
-        }
-
-        [Command("Raw")]
-        [RequireOwner]
-        public async Task Raw([Remainder] string message)
-        {
-            await ReplyAsync($"```{message}```");
         }
 
         private static string GetUptime()

@@ -1,12 +1,12 @@
-﻿using Discord;
+﻿using System;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using MongoDB.Driver;
 using NLog;
-using RubyRose.Services;
 using System.Threading.Tasks;
-using RubyRose.RWBY;
 using Microsoft.Extensions.DependencyInjection;
+using RubyRose.Services.EventHandler;
 
 namespace RubyRose
 {
@@ -15,6 +15,11 @@ namespace RubyRose
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         public static void Main(string[] args) => new Program().Start().GetAwaiter().GetResult();
+
+        private DiscordSocketClient _client;
+        private MongoClient _mongo;
+        private CoreConfig _config;
+        private CommandHandler _handler;
 
         public async Task Start()
         {
@@ -43,46 +48,56 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
                                                             yyyyyyy");
 
             Logger.Info("Loading configuration");
-            var config = CoreConfig.ReadConfig();
-
+            _config = CoreConfig.Load();
+            
             Logger.Info("Initiating DiscordClient");
-            var client = new DiscordSocketClient(new DiscordSocketConfig
+            _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 AlwaysDownloadUsers = true,
                 LogLevel = LogSeverity.Debug,
                 MessageCacheSize = 100
             });
 
-            client.Log += Logging;
-
             Logger.Info("Connecting to MongoDb");
-            var mongo = new MongoClient(config.Database.Mongo);
+            _mongo = new MongoClient(_config.Database.ConnectionString);
 
-            var services = new ServiceCollection()
-                .AddSingleton(client)
-                .AddSingleton(mongo)
-                .AddSingleton(config)
-                .AddSingleton(new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false }))
-                .AddSingleton(Logger);
+            var provider = ConfigureProvider();
 
-            var provider = services.BuildServiceProvider();
+            _handler = new CommandHandler(provider);
+            _client.Ready += StartHandler;
 
-            Logger.Info("Initializing Service Handler");
-            GameBase.MongoClient = mongo;
-            // ReSharper disable once ObjectCreationAsStatement
-            new ServiceHandler(provider);
+            await EventHandlerService.Install(provider);
+            await EventHandlerService.StartHandlers();
 
-            Logger.Info("Starting Login to Discord");
-            await client.LoginAsync(TokenType.Bot, (config.IsMainBot ? config.Token.Main : config.Token.Dev));
+            await Task.Delay(500);
 
-            Logger.Info("Starting Bot");
-            await client.StartAsync();
-
-            Logger.Info("Initializing Command Handler");
-            var handler = new CommandHandler();
-            await handler.Install(provider);
+            await _client.LoginAsync(TokenType.Bot, _config.Token);
+            await _client.StartAsync();
+            Logger.Info("Started Bot");
 
             await Task.Delay(-1);
+        }
+
+        private Task StartHandler()
+        {
+            Task.Run(async () =>
+            {
+                await Task.Delay(1000);
+                await _handler.StartServiceAsync();
+            }).ConfigureAwait(false);
+            return Task.CompletedTask;
+        }
+
+        private IServiceProvider ConfigureProvider()
+        {
+            var services = new ServiceCollection()
+                .AddSingleton(_client)
+                .AddSingleton(_mongo)
+                .AddSingleton(_config)
+                .AddSingleton(new CommandService(
+                    new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false }));
+
+            return services.BuildServiceProvider();
         }
 
         public static Task Logging(LogMessage arg)

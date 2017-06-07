@@ -1,8 +1,8 @@
-﻿using Discord.Commands;
+﻿using System.Threading.Tasks;
+using Discord.Commands;
 using RubyRose.Common;
-using System.Threading.Tasks;
 
-namespace RubyRose.Modules.Owner
+namespace RubyRose.Modules.System
 {
     [Name("System")]
     public class UpdateCommand : ModuleBase
