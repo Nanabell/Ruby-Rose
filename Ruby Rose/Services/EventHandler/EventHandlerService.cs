@@ -153,6 +153,10 @@ namespace RubyRose.Services.EventHandler
 
                 var rwbyFight = new RwbyFightService(_provider);
                 await rwbyFight.StartService();
+                
+                var rwbySleeper = new RwbySleepService(_provider);
+                await rwbySleeper.StartService();
+                
             }).ConfigureAwait(false);
         }
 

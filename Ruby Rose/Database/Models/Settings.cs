@@ -19,6 +19,8 @@ namespace RubyRose.Database.Models
 
         public bool RwbyFight { get; set; } = true;
 
+        public bool RwbySleeper { get; set; } = true;
+
         public ulong OtpRoleId { get; set; }
 
         public override string ToString()
@@ -28,6 +30,7 @@ namespace RubyRose.Database.Models
             sb.AppendLine($"GuildId:         {GuildId}");
             sb.AppendLine($"Result Announce: {IsErrorReporting}");
             sb.AppendLine($"Rwby Fight:      {RwbyFight}");
+            sb.AppendLine($"Rwby Sleeper:    {RwbySleeper}");
             sb.AppendLine("```");
             return sb.ToString();
         }
