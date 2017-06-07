@@ -20,7 +20,7 @@ namespace RubyRose
         private MongoClient _mongo;
         private CoreConfig _config;
         private CommandHandler _handler;
-        
+
         public async Task Start()
         {
             Logger.Info("\n" + @"
@@ -48,8 +48,8 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
                                                             yyyyyyy");
 
             Logger.Info("Loading configuration");
-            _config = CoreConfig.ReadConfig();
-
+            _config = CoreConfig.Load();
+            
             Logger.Info("Initiating DiscordClient");
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
@@ -57,12 +57,12 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
                 LogLevel = LogSeverity.Debug,
                 MessageCacheSize = 100
             });
-            
+
             Logger.Info("Connecting to MongoDb");
-            _mongo = new MongoClient(_config.MongoConnectionString);
+            _mongo = new MongoClient(_config.Database.ConnectionString);
 
             var provider = ConfigureProvider();
-            
+
             _handler = new CommandHandler(provider);
             _client.Ready += StartHandler;
 
@@ -74,7 +74,7 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
             Logger.Info("Started Bot");
-            
+
             await Task.Delay(-1);
         }
 
@@ -95,7 +95,7 @@ RRRRRRRR     RRRRRRR    uuuuuuuu  uuuu bbbbbbbbbbbbbbbb          y:::::y        
                 .AddSingleton(_mongo)
                 .AddSingleton(_config)
                 .AddSingleton(new CommandService(
-                    new CommandServiceConfig {CaseSensitiveCommands = false, ThrowOnError = false}));
+                    new CommandServiceConfig { CaseSensitiveCommands = false, ThrowOnError = false }));
 
             return services.BuildServiceProvider();
         }
