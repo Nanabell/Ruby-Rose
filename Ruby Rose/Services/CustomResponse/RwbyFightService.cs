@@ -46,7 +46,7 @@ namespace RubyRose.Services.CustomResponse
                     if (message.Channel.CheckChannelPermission(ChannelPermission.AttachFiles, user.Guild.CurrentUser))
                     {
                         var context = new CommandContext(_client, message);
-                        if (Regex.IsMatch(context.Message.Content, "<:Heated2:\\d+>"))
+                        if (Regex.IsMatch(context.Message.Content, "<:Heated2:\\d+>", RegexOptions.Compiled))
                         {
                             if (_weiss.TryGetValue(context.Channel.Id, out var isWeiss))
                             {
@@ -64,7 +64,7 @@ namespace RubyRose.Services.CustomResponse
                                 _ruby.TryAdd(context.Channel.Id, true);
                             }
                         }
-                        else if (Regex.IsMatch(context.Message.Content, "<:Heated1:\\d+>"))
+                        else if (Regex.IsMatch(context.Message.Content, "<:Heated1:\\d+>", RegexOptions.Compiled))
                         {
                             if (_ruby.TryGetValue(context.Channel.Id, out var isRuby))
                             {
