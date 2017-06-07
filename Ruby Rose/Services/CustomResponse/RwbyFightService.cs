@@ -97,12 +97,12 @@ namespace RubyRose.Services.CustomResponse
             var settings = await _mongo.GetCollection<Settings>(_client).GetByGuildAsync(context.Guild.Id);
             if (settings.RwbyFight)
             {
-                var direc = new DirectoryInfo(Assembly.GetEntryAssembly().Location);
-                do
-                    direc = direc.Parent;
-                while (direc.Name != "Ruby Rose");
+                var directory = Directory.GetCurrentDirectory();
+                const string path = "/Data/rwby-fight.gif";
                 _logger.Info("Triggered Rwby Fight Gif");
-                await context.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
+                await context.Channel.SendFileAsync(directory + path);
+                _weiss.TryRemove(context.Channel.Id, out var _);
+                _ruby.TryRemove(context.Channel.Id, out var _);
             }
         }
     }
