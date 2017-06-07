@@ -33,12 +33,10 @@ namespace RubyRose.Services.RwbyFight
         internal Task StartService()
         {
             _client.MessageReceived += Client_MessageReceived;
-            
+
             return Task.CompletedTask;
         }
-        
-        
-        
+
         private async Task Client_MessageReceived(SocketMessage arg)
         {
             if (arg is SocketUserMessage message)
@@ -61,6 +59,10 @@ namespace RubyRose.Services.RwbyFight
                                     _ruby.TryAdd(context.Channel.Id, true);
                                 }
                             }
+                            else
+                            {
+                                _ruby.TryAdd(context.Channel.Id, true);
+                            }
                         }
                         else if (Regex.IsMatch(context.Message.Content, "<:Heated1:\\d+>"))
                         {
@@ -74,6 +76,10 @@ namespace RubyRose.Services.RwbyFight
                                 {
                                     _weiss.TryAdd(context.Channel.Id, true);
                                 }
+                            }
+                            else
+                            {
+                                _weiss.TryAdd(context.Channel.Id, true);
                             }
                         }
                         else
@@ -99,7 +105,5 @@ namespace RubyRose.Services.RwbyFight
                 await context.Channel.SendFileAsync($"{direc.FullName}/Data/rwby-fight.gif");
             }
         }
-        
-        
     }
 }
