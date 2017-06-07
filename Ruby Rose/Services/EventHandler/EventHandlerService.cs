@@ -8,8 +8,8 @@ using MongoDB.Driver;
 using NLog;
 using RubyRose.Database;
 using RubyRose.Database.Models;
+using RubyRose.Services.CustomResponse;
 using RubyRose.Services.Logging;
-using RubyRose.Services.RwbyFight;
 
 namespace RubyRose.Services.EventHandler
 {
