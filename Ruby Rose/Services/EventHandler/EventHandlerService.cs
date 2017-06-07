@@ -150,13 +150,13 @@ namespace RubyRose.Services.EventHandler
 
                 var logging = new MessageLoggingService(_provider);
                 await logging.StartLogging();
-
+/*
                 var rwbyFight = new RwbyFightService(_provider);
                 await rwbyFight.StartService();
                 
                 var rwbySleeper = new RwbySleepService(_provider);
                 await rwbySleeper.StartService();
-                
+*/
             }).ConfigureAwait(false);
         }
 
